@@ -11,6 +11,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 - Setting the fan mode no longer turns on a unit that is off. The setting applies when the
   unit next runs.
+- Choosing a mode on a unit that is off now sends one command instead of two.
 
 ### Fixed
 

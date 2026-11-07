@@ -413,3 +413,52 @@ def test_setting_the_fan_does_not_start_a_unit_that_is_off(run_in_hass) -> None:
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    ("mode", "frame"), [("heat", "3043ff"), ("cool", "3042ff"), ("fan_only", "3045ff")]
+)
+def test_choosing_a_mode_on_a_unit_that_is_off_is_one_command(
+    run_in_hass, mode, frame
+) -> None:
+    """Two commands cost two requests, and could start in the old mode for a moment."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_real_entry(hass)
+            assert hass.states.get(CLIMATE).state == "off"
+
+            await hass.services.async_call(
+                "climate",
+                "set_hvac_mode",
+                {"entity_id": CLIMATE, "hvac_mode": mode},
+                blocking=True,
+            )
+
+            assert [c["payload"]["data"][:6] for c in fake.commands] == [frame]
+            assert fake.requests["command"] == 1
+            assert hass.states.get(CLIMATE).state == mode
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_choosing_a_mode_on_a_running_unit_changes_only_the_mode(run_in_hass) -> None:
+    """A running unit needs no status in the command."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+
+            await hass.services.async_call(
+                "climate",
+                "set_hvac_mode",
+                {"entity_id": CLIMATE, "hvac_mode": "heat"},
+                blocking=True,
+            )
+
+            assert [c["payload"]["data"][:6] for c in fake.commands] == ["ff43ff"]
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

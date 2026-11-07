@@ -118,6 +118,7 @@ def make_device(**overrides: Any) -> MagicMock:
         "set_ac_merit_b",
         "set_ac_air_pure_ion",
         "set_ac_wireless_led",
+        "turn_on_in_mode",
     ):
         setattr(device, setter, AsyncMock())
 

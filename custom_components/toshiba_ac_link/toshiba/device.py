@@ -243,6 +243,13 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         state.ac_mode = val
         await self.send_state_to_ac(state)
 
+    async def turn_on_in_mode(self, val: ToshibaAcMode) -> None:
+        """Turn the unit on in a mode, with one command."""
+        state = ToshibaAcFcuState()
+        state.ac_status = ToshibaAcStatus.ON
+        state.ac_mode = val
+        await self.send_state_to_ac(state)
+
     @property
     def ac_temperature(self) -> int | None:
         """Return the setpoint. In 8 °C mode the wire value is 16 degrees above it."""
