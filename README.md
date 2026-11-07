@@ -94,7 +94,7 @@ Each unit becomes a device. An entity only exists if the unit has the function.
 | Entity | Type | Notes |
 |---|---|---|
 | *(device name)* | Climate | Mode, target temperature, fan, vertical swing, power preset. Horizontal swing on units with independent vanes |
-| Indoor temperature | Sensor | |
+| Indoor temperature | Sensor | Disabled at first on new units, because the climate entity shows the same value. To use it, select **Enable** in the settings of the entity |
 | Outdoor temperature | Sensor | Unavailable while the outdoor unit reports nothing |
 | Energy consumption | Sensor | In Wh since the start of the year. Works with the Energy dashboard |
 | Self cleaning | Binary sensor | On while the unit is cleaning itself. The climate entity shows off during this time, as the app does |

@@ -9,7 +9,7 @@ How the Toshiba Link integration talks to Toshiba.
 | `climate` | Thermostat: HVAC mode, temperature, fan mode, swing, power preset |
 | `binary_sensor` | Self cleaning |
 | `select` | Outdoor unit silent mode, fireplace mode |
-| `sensor` | Indoor temperature, outdoor temperature, energy consumption |
+| `sensor` | Indoor temperature, disabled by default on new units, outdoor temperature, energy consumption |
 | `switch` | 8 °C mode, air purifier, ECO mode, high power mode, wireless LED |
 
 Entities are created per device and only for features the model actually

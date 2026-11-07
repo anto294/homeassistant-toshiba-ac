@@ -18,6 +18,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Errors that Home Assistant shows, from actions and on the integration page, are now in
   the language of the user, in English, German, Italian and Dutch. A wait after Toshiba
   asks to slow down is shown in minutes.
+- The indoor temperature sensor now starts disabled, because the climate entity shows the
+  same value. This only affects new installations and units added later: a sensor you
+  already have stays enabled, with the same entity ID. To use it on a new unit, open the
+  entity from the device page, and enable it in its settings.
 
 ## [0.1.0] - 2026-11-07
 

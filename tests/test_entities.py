@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -47,7 +47,6 @@ def test_all_platforms_create_entities(run_in_hass) -> None:
         assert state.attributes["temperature"] == 21
         assert state.attributes["current_temperature"] == 20
 
-        assert hass.states.get("sensor.living_room_indoor_temperature").state == "20"
         assert hass.states.get("sensor.living_room_outdoor_temperature").state == "7"
         assert hass.states.get("binary_sensor.living_room_self_cleaning").state == "off"
         assert hass.states.get("switch.living_room_wireless_led").state == "on"
@@ -365,3 +364,62 @@ async def test_an_enum_description_ignores_an_empty_value() -> None:
     await description.async_turn_off(device)
 
     device.set_ac_merit_a.assert_not_awaited()
+
+
+INDOOR = "sensor.living_room_indoor_temperature"
+
+
+def test_a_new_indoor_temperature_sensor_starts_disabled_and_can_be_enabled(
+    run_in_hass,
+) -> None:
+    """The climate entity shows the same value, so most users do not need a copy."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        manager = make_manager()
+        with patch(
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
+            return_value=manager,
+        ):
+            entry = await async_add_entry(hass, manager)
+            registry = er.async_get(hass)
+
+            assert hass.states.get(INDOOR) is None
+            assert (
+                registry.async_get(INDOOR).disabled_by
+                is er.RegistryEntryDisabler.INTEGRATION
+            )
+            assert registry.async_get(INDOOR).unique_id == "unit-1_indoor_temperature"
+            assert (
+                hass.states.get("climate.living_room").attributes["current_temperature"]
+                == 20
+            )
+
+            registry.async_update_entity(INDOOR, disabled_by=None)
+            await hass.config_entries.async_reload(entry.entry_id)
+            await hass.async_block_till_done()
+
+            assert hass.states.get(INDOOR).state == "20"
+
+    run_in_hass(scenario)
+
+
+def test_an_existing_indoor_temperature_sensor_stays_enabled(run_in_hass) -> None:
+    """An update must not take away a sensor that dashboards may use."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        registry = er.async_get(hass)
+        existing = registry.async_get_or_create(
+            "sensor",
+            DOMAIN,
+            "unit-1_indoor_temperature",
+            suggested_object_id="living_room_indoor_temperature",
+        )
+        assert existing.entity_id == INDOOR
+        assert existing.disabled_by is None
+
+        await async_add_entry(hass, make_manager())
+
+        assert registry.async_get(INDOOR).disabled_by is None
+        assert hass.states.get(INDOOR).state == "20"
+
+    run_in_hass(scenario)

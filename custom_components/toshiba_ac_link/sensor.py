@@ -130,6 +130,9 @@ class ToshibaTempSensor(ToshibaAcStateEntity, SensorEntity):
         self._key = key
         self._attr_unique_id = f"{device.ac_unique_id}_{key}"
         self._attr_translation_key = key
+        # The climate entity already shows it. This only decides how a new entity starts:
+        # one that is already in the registry stays as it is
+        self._attr_entity_registry_enabled_default = key != "indoor_temperature"
 
     @property
     def _temperature(self) -> int | None:
