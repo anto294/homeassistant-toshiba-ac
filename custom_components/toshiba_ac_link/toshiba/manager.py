@@ -15,7 +15,7 @@ import aiohttp
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from .api import LoginResult, ToshibaApi, parse_units
+from .api import LoginResult, ToshibaApi, UnitInfo, parse_units
 from .device import ToshibaAcDevice
 from .errors import (
     ToshibaAuthError,
@@ -60,6 +60,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         device_id: str,
         login: LoginResult,
         on_auth_failed: Callable[[], None],
+        on_units_changed: Callable[[], None],
     ) -> None:
         """Store the account. Nothing is requested before connect."""
         self._hass = hass
@@ -67,6 +68,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         self._device_id = device_id
         self._consumer_id = login.consumer_id
         self._on_auth_failed = on_auth_failed
+        self._on_units_changed = on_units_changed
         self._api = ToshibaApi(session, guard, device_id, login)
         self._realtime = ToshibaRealtime(
             session,
@@ -146,31 +148,35 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         units, skipped = parse_units(groups)
         for unit in units:
             try:
-                self._devices[unit.ac_unique_id] = ToshibaAcDevice(
-                    unit.name,
-                    unit.ac_id,
-                    unit.ac_unique_id,
-                    unit.state,
-                    unit.firmware_version,
-                    unit.merit_feature,
-                    unit.ac_model_id,
-                    self._async_send_command,
-                    lambda: self._realtime.connected,
-                )
-                self._devices[unit.ac_unique_id].on_state_changed_callback.add(
-                    self._remember_state
-                )
+                device = self._build_device(unit)
             except _BAD_DATA_ERRORS as ex:
                 skipped += 1
                 _LOGGER.debug("Cannot read a unit: %s", type(ex).__name__)
+                continue
+            device.on_state_changed_callback.add(self._remember_state)
+            self._devices[unit.ac_unique_id] = device
         if skipped:
             _LOGGER.warning(
-                "Skipping %d unit(s) with data that cannot be read, until a restart",
+                "Skipping %d unit(s) with data that cannot be read, until they can be",
                 skipped,
             )
             # Loading with nothing would stay empty until the next restart
             if not self._devices:
                 raise ToshibaConnectionError("No unit can be read")
+
+    def _build_device(self, unit: UnitInfo) -> ToshibaAcDevice:
+        """Return a unit, or raise one of _BAD_DATA_ERRORS."""
+        return ToshibaAcDevice(
+            unit.name,
+            unit.ac_id,
+            unit.ac_unique_id,
+            unit.state,
+            unit.firmware_version,
+            unit.merit_feature,
+            unit.ac_model_id,
+            self._async_send_command,
+            lambda: self._realtime.connected,
+        )
 
     def _remember_state(self, device: ToshibaAcDevice) -> None:
         """Keep the saved list correct, for a restart that reuses it."""
@@ -267,9 +273,22 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         await self._guard.async_cache(
             "units", self._consumer_id, {"at": time.time(), "groups": groups}
         )
-        for unit in parse_units(groups)[0]:
+        units, _skipped = parse_units(groups)
+        for unit in units:
             if device := self._devices.get(unit.ac_unique_id):
                 await self._async_update_device(device, unit.state)
+        if any(self._is_new_and_readable(unit) for unit in units):
+            self._on_units_changed()
+
+    def _is_new_and_readable(self, unit: UnitInfo) -> bool:
+        """Return whether a reload would add this unit, which is the only reason for one."""
+        if unit.ac_unique_id in self._devices:
+            return False
+        try:
+            self._build_device(unit)
+        except _BAD_DATA_ERRORS:
+            return False
+        return True
 
     async def _async_energy_loop(self) -> None:
         """Read the energy once per hour, which a restart does not bring forward."""

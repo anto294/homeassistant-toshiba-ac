@@ -85,6 +85,7 @@ restart starts with what it knew, so restarting cannot reset them.
 | A token that says it expired | The same, without a request |
 | 3 failed logins in an hour on one account | The form says to try later, and sends nothing |
 | A restart | Reuses a list of units up to 15 minutes old and an energy reading up to an hour old, so it costs one request for the socket address, or two after 15 minutes. If it keeps running for 5 minutes, one more request corrects the reused list |
+| A unit joins the account | The next list shows it, and a reload adds it, for one request. A unit that cannot be read causes no reload |
 
 `tests/test_account_safety.py` proves these against a local server that counts requests.
 Keep it passing, and extend it with any new request.

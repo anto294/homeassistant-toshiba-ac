@@ -63,6 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> b
             entry.data["consumer_id"],
         ),
         lambda: entry.async_start_reauth(hass),
+        lambda: hass.config_entries.async_schedule_reload(entry.entry_id),
     )
 
     try:

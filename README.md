@@ -217,7 +217,7 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 - **It needs the cloud.** No internet or a Toshiba outage means no control. There is no local mode.
 - **Changes made in the app can arrive late.** They took a minute or two in our measurements. Commands from Home Assistant were confirmed in about a second.
 - **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
-- **New units need a reconnect.** A unit you add to the account appears after the `reconnect` action or a restart, up to 15 minutes later.
+- **New units can take a while.** A unit you add to the account appears by itself within about 30 minutes. The `reconnect` action can bring it sooner, if the last list of units is more than 15 minutes old.
 - **Whole degrees only.** Toshiba's protocol has no half degrees.
 - **Removed units stay until you delete them.** After you remove a unit from the account, call the `reconnect` action or restart, up to 15 minutes later, then select **Delete** on the page of that device. A unit that is still on the account cannot be deleted.
 - **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
@@ -307,7 +307,7 @@ Home Assistant grades the integrations in its core with the [Integration Quality
 |---|---:|---:|---:|---:|
 | Bronze | 20 | 17 | 3 | 0 |
 | Silver | 10 | 9 | 1 | 0 |
-| Gold | 21 | 13 | 3 | 5 |
+| Gold | 21 | 14 | 3 | 4 |
 | Platinum | 3 | 3 | 0 | 0 |
 
 A tier needs every rule of that tier and the ones below it, so this project meets Bronze and Silver, and does not claim the others yet. The tests cover 99 percent of the code, and CI measures this on each run.

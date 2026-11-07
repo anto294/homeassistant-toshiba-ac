@@ -7,6 +7,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- A unit added to the account now appears by itself within about 30 minutes, without a
+  restart. The same goes for a unit that was skipped because its data could not be read.
+
 ### Changed
 
 - Setting the fan mode no longer turns on a unit that is off. The setting applies when the

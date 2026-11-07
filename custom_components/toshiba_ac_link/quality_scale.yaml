@@ -60,8 +60,8 @@ rules:
   docs-troubleshooting: done
   docs-use-cases: done
   dynamic-devices:
-    status: todo
-    comment: A unit added to the account appears after the reconnect action or a restart.
+    status: done
+    comment: A unit added to the account appears after the next list of units, within about 30 minutes, with a reload.
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default:
