@@ -45,8 +45,7 @@ and includes work from version 2026.10.0 of
 - A native client replaces the protocol library and the Azure IoT SDK. It uses the same
   channel as the current Toshiba app, Azure Web PubSub, and HTTPS for commands.
 - The password is no longer stored, and only the forms log in. When the token stops
-  working, in about two years or after a password change, Home Assistant asks for the
-  password.
+  working, which should take about two years, Home Assistant asks for the password.
 - Only a rejected token now asks for the password. WAF and rate limit responses wait.
 - A command now shows in Home Assistant as soon as Toshiba accepts it.
 - An account can only be added once.

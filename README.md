@@ -63,7 +63,7 @@ Since Home Assistant 2026.11, HACS is built into Home Assistant as the Marketpla
 
 [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=anto294&repository=homeassistant-toshiba-ac&category=integration)
 
-Turn on beta versions for this repository, since only pre-releases exist so far, then select **Install**, confirm, and restart Home Assistant if a repair asks you to. Without beta versions, the installation fails with a 404 error in the log.
+Turn on beta versions for this repository, since only pre-releases exist so far, then select **Install**, confirm, and restart Home Assistant if a repair asks you to. Otherwise the installation can fail with a 404 error in the log.
 
 ### Manual
 
@@ -84,7 +84,7 @@ Go to **Settings → Devices & services → Add integration** and search for **T
 
 Each account can be added once. There are no other options.
 
-Your password is used for one login and is not stored. Toshiba's token lasts about two years. When it stops working, for example after you change the password, Home Assistant asks for the password under **Settings → Devices & services**.
+Your password is used for one login and is not stored. Toshiba's token lasts about two years. When it stops working, Home Assistant asks for the password under **Settings → Devices & services**.
 
 The Toshiba app can stay in use at the same time. Enter the password with care, because the form allows 3 failed attempts per hour.
 
@@ -141,7 +141,7 @@ These limits are saved on disk before each request, so restarting does not reset
 ## Your data
 
 - **Your password** goes to Toshiba once, when you send a form, and is not stored.
-- **The token and your username** are stored in Home Assistant's configuration, like those of other integrations. Whoever can read your configuration folder or backups can use the token, so treat them as sensitive. To stop it, change your Toshiba password.
+- **The token and your username** are stored in Home Assistant's configuration, like those of other integrations. Whoever can read your configuration folder or backups can use the token, so treat them as sensitive. Whether changing your Toshiba password cancels a token has not been tested.
 - **Limits and the last list of units** are in a private file under `.storage/`.
 - **Everything goes only to Toshiba and its Azure service.** This project collects nothing.
 - **Diagnostics** leave out your account, tokens and unit IDs, so you can attach them to an issue.
@@ -225,10 +225,10 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 ## Troubleshooting
 
 **The Marketplace log says "Got status code 404" for `toshiba_ac_link.zip`.**
-Turn on beta versions for Toshiba Link and install again. Only pre-releases exist so far.
+Only pre-releases exist so far, so turn on beta versions for Toshiba Link and install again.
 
 **Home Assistant asks for the password.**
-Toshiba rejected the token, for example after a password change, or the token expired. Send the current password once. Nothing is retried until you do.
+Toshiba rejected the token, or the token expired. Send the current password once. Nothing is retried until you do.
 
 **Setup keeps retrying after a restart.**
 The Toshiba cloud may be unavailable, or may have asked to slow down, and then the integration waits by itself for 15 minutes or more. Restarting does not shorten this. Check that the app works in the meantime. **Download diagnostics** shows how long the wait is, under `blocked_for_s`.
