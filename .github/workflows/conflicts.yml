@@ -1,0 +1,34 @@
+name: Merge conflicts
+
+on:
+  # A push to main can make open pull requests conflict.
+  push:
+    branches: [main]
+  # pull_request_target so the label can also be set on pull requests from
+  # forks. Safe here: the workflow never checks out or runs PR code.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    name: Label conflicting pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The last tagged release (v2.0, 2020) predates the retry inputs, so
+      # this follows master.
+      - name: Label pull requests with merge conflicts
+        uses: mschilde/auto-label-merge-conflicts@3fdaf1c8b3f8e5b0f88753d9cb3c9c779370b3ef # master
+        with:
+          CONFLICT_LABEL_NAME: conflict
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAX_RETRIES: 5
+          WAIT_MS: 5000

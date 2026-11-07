@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Keep GitHub Actions versions current (Node runtime deprecations, fixes).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - github_actions
+    commit-message:
+      prefix: "CI"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

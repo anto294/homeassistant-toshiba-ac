@@ -1,58 +1,59 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
 
 jobs:
   build:
+    # HACS installs from the toshiba_ac_link.zip asset of the release
+    # ("zip_release" in hacs.json). Release notes are written by hand from
+    # CHANGELOG.md when the release is created, so this job only builds and
+    # attaches the asset.
+    name: Build and attach toshiba_ac_link.zip
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Read Properties
-        id: read_property
-        uses: ashley-taylor/read-json-property-action@v1.0
+      - name: Check out the release tag
+        uses: actions/checkout@v7
         with:
-          path: custom_components/toshiba_ac_link/manifest.json
-          property: version
+          ref: ${{ github.event.release.tag_name }}
 
-      - name: Get Latest Release
-        id: get_latest_release
-        uses: joutvhu/get-release@v1
-        with:
-          latest: true
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check version
+      - name: Validate tag and derive version
         run: |
-          echo Uploaded version: ${{ steps.read_property.outputs.value }}
-          echo Latest version: ${{ steps.get_latest_release.outputs.name }}
+          VERSION="${TAG#v}"
+          # X.Y.Z with an optional beta suffix, e.g. 1.5.0 or 1.5.0b1.
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not a valid version (expected vX.Y.Z or vX.Y.ZbN)"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Skip release
-        if: ${{ steps.read_property.outputs.value == steps.get_latest_release.outputs.name }}
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Set version in manifest.json
+        run: python .github/update_version.py --version "$VERSION"
+
+      - name: Build toshiba_ac_link.zip
+        working-directory: custom_components/toshiba_ac_link
         run: |
-          echo Skipping release because version did not change!
+          zip -r "$RUNNER_TEMP/toshiba_ac_link.zip" . -x '__pycache__/*' '*/__pycache__/*' '*.pyc'
+          unzip -p "$RUNNER_TEMP/toshiba_ac_link.zip" manifest.json | grep -q "\"version\": \"$VERSION\""
 
-      - name: Create zip asset
-        if: ${{ steps.read_property.outputs.value != steps.get_latest_release.outputs.name }}
-        uses: TheDoctor0/zip-release@0.4.2
-        with:
-          filename: toshiba_ac_link-${{ steps.read_property.outputs.value }}.zip
-          directory: custom_components/
-          type: zip
-
-      - name: Create release
-        if: ${{ steps.read_property.outputs.value != steps.get_latest_release.outputs.name }}
-        uses: meeDamian/github-release@v2.0.3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.read_property.outputs.value }}
-          name: ${{ steps.read_property.outputs.value }}
-          body: ${{ github.event.head_commit.message }}
-          files: custom_components/toshiba_ac_link-${{ steps.read_property.outputs.value }}.zip
-          gzip: false
+      - name: Attach toshiba_ac_link.zip to the release
+        run: gh release upload "$TAG" "$RUNNER_TEMP/toshiba_ac_link.zip" --clobber
