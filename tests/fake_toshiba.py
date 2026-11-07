@@ -59,6 +59,7 @@ class FakeToshiba:
         self.sockets: list[web.WebSocketResponse] = []
         self.refuse_sockets = False
         self.channel_tokens: set[str] = set()
+        self.bad_channel_answers: list[Any] = []
         self.base_url = ""
 
     @staticmethod
@@ -123,6 +124,8 @@ class FakeToshiba:
         """Hand out a socket address with Toshiba's date format."""
         if refusal := self._refusal("channel"):
             return refusal
+        if self.bad_channel_answers:
+            return self._answer(self.bad_channel_answers.pop(0))
         expires = datetime.now(UTC) + timedelta(minutes=15)
         token = f"secret-url-{self.requests['channel']}"
         self.channel_tokens.add(token)

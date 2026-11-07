@@ -14,6 +14,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   entity shows unknown until a known mode arrives.
 - After a restart or a reload within 15 minutes, an entity could show its older state for
   about half an hour. The integration now corrects the state 5 minutes after such a start.
+- A unit with data that cannot be read is now skipped with a warning, and no longer stops
+  the whole account. If no unit can be read, setup retries. Unexpected answers no longer
+  end the periodic requests or the realtime channel for good.
 
 ## [0.1.0b2] - 2026-11-07
 

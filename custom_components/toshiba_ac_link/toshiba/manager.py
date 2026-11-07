@@ -42,6 +42,9 @@ ENERGY_S = 60 * 60
 
 FIRST_CONNECTION_WAIT_S = 10
 
+# What decoding the data of a unit can raise, when the cloud sends something unexpected
+_BAD_DATA_ERRORS = (ValueError, TypeError, IndexError, struct.error)
+
 
 # ---------------------------
 #   ToshibaAcDeviceManager
@@ -139,8 +142,9 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
             await self._guard.async_cache(
                 "units", self._consumer_id, {"at": time.time(), "groups": groups}
             )
-        try:
-            for unit in parse_units(groups):
+        units, skipped = parse_units(groups)
+        for unit in units:
+            try:
                 self._devices[unit.ac_unique_id] = ToshibaAcDevice(
                     unit.name,
                     unit.ac_id,
@@ -152,8 +156,17 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
                     self._async_send_command,
                     lambda: self._realtime.connected,
                 )
-        except (TypeError, ValueError, struct.error) as ex:
-            raise ToshibaConnectionError("Unexpected state of a unit") from ex
+            except _BAD_DATA_ERRORS as ex:
+                skipped += 1
+                _LOGGER.debug("Cannot read a unit: %s", type(ex).__name__)
+        if skipped:
+            _LOGGER.warning(
+                "Skipping %d unit(s) with data that cannot be read, until a restart",
+                skipped,
+            )
+            # Loading with nothing would stay empty until the next restart
+            if not self._devices:
+                raise ToshibaConnectionError("No unit can be read")
 
     # Realtime channel
 
@@ -192,7 +205,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         """Merge a state. A value that cannot be decoded must not end the channel."""
         try:
             await device.async_update_state(hex_state)
-        except (ValueError, TypeError) as ex:
+        except _BAD_DATA_ERRORS as ex:
             _LOGGER.debug("Ignoring a state of %s: %s", device.name, ex)
 
     def _start_short_task(self, coroutine: Any) -> None:
@@ -244,7 +257,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         await self._guard.async_cache(
             "units", self._consumer_id, {"at": time.time(), "groups": groups}
         )
-        for unit in parse_units(groups):
+        for unit in parse_units(groups)[0]:
             if device := self._devices.get(unit.ac_unique_id):
                 await self._async_update_device(device, unit.state)
 
@@ -291,6 +304,9 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
             await asyncio.sleep(ex.retry_after)
         except ToshibaError as ex:
             _LOGGER.debug("Periodic request failed: %s", ex)
+        except Exception:  # pylint: disable=broad-except
+            # The loop must go on, and it waits for its next turn before any retry
+            _LOGGER.exception("Periodic request failed unexpectedly")
         return True
 
     def diagnostics(self) -> dict[str, Any]:

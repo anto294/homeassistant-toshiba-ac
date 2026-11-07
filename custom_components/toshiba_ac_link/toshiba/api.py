@@ -90,24 +90,37 @@ def token_expiry(token: str) -> float | None:
 # ---------------------------
 #   parse_units
 # ---------------------------
-def parse_units(groups: list[dict[str, Any]]) -> list[UnitInfo]:
-    """Return the units in an answer of the mapping endpoint."""
-    try:
-        return [
-            UnitInfo(
-                unit["Id"],
-                unit["DeviceUniqueId"],
-                unit["Name"],
-                unit["ACStateData"],
-                unit["FirmwareVersion"],
-                unit["MeritFeature"],
-                unit["ACModelId"],
-            )
-            for group in groups
-            for unit in group["ACList"]
-        ]
-    except (KeyError, TypeError) as ex:
-        raise ToshibaConnectionError("Unexpected list of units") from ex
+def parse_units(groups: list[dict[str, Any]]) -> tuple[list[UnitInfo], int]:
+    """Return the units in an answer of the mapping endpoint, and how many were skipped.
+
+    One unit with unexpected data must not cost the others.
+    """
+    units: list[UnitInfo] = []
+    skipped = 0
+    for group in groups:
+        try:
+            group_units = list(group["ACList"])
+        except (KeyError, TypeError):
+            skipped += 1
+            continue
+        for unit in group_units:
+            try:
+                if not isinstance(unit["DeviceUniqueId"], str):
+                    raise TypeError
+                units.append(
+                    UnitInfo(
+                        unit["Id"],
+                        unit["DeviceUniqueId"],
+                        unit["Name"],
+                        unit["ACStateData"],
+                        unit["FirmwareVersion"],
+                        unit["MeritFeature"],
+                        unit["ACModelId"],
+                    )
+                )
+            except (KeyError, TypeError):
+                skipped += 1
+    return units, skipped
 
 
 # ---------------------------
@@ -291,10 +304,9 @@ class ToshibaApi:
     async def async_get_channel_url(self) -> str:
         """Return a new address for the realtime socket, good for one connection."""
         data = await self._async_request("POST", CHANNEL_PATH, json={})
-        try:
-            url: str = data["Url"]
-        except (KeyError, TypeError) as ex:
-            raise ToshibaConnectionError(f"{CHANNEL_PATH}: unexpected answer") from ex
+        url = data.get("Url") if isinstance(data, dict) else None
+        if not isinstance(url, str):
+            raise ToshibaConnectionError(f"{CHANNEL_PATH}: unexpected answer")
         return url
 
     async def async_send_command(self, message: dict[str, Any]) -> None:
