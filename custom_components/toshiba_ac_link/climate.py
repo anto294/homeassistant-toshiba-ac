@@ -31,6 +31,10 @@ from .feature_list import get_feature_by_name, get_feature_list
 
 _LOGGER = logging.getLogger(__name__)
 
+NORMAL_MIN_TEMP = 17
+NORMAL_MAX_TEMP = 30
+HEATING_8C_MIN_TEMP = 5
+
 TOSHIBA_TO_HVAC_MODE = {
     ToshibaAcMode.AUTO: HVACMode.AUTO,
     ToshibaAcMode.COOL: HVACMode.COOL,
@@ -97,24 +101,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         """Set new target temperature."""
         set_temperature = kwargs[ATTR_TEMPERATURE]
 
-        # Check if HEATING_8C mode is active (not just supported)
-        if (
-            hasattr(self._device, "ac_merit_a")
-            and self._device.ac_merit_a == ToshibaAcMeritA.HEATING_8C
-        ):
-            # upper limit for target temp
-            if set_temperature > 13:
-                set_temperature = 13
-            # lower limit for target temp
-            elif set_temperature < 5:
-                set_temperature = 5
-        else:
-            # upper limit for target temp
-            if set_temperature > 30:
-                set_temperature = 30
-            # lower limit for target temp
-            elif set_temperature < 17:
-                set_temperature = 17
+        set_temperature = max(self.min_temp, min(self.max_temp, set_temperature))
 
         await self._device.set_ac_temperature(set_temperature)
 
@@ -234,24 +221,25 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         return self._device.ac_temperature
 
     @property
+    def _heating_8c_active(self) -> bool:
+        """Return True if frost protection is on, not just supported."""
+        return self._device.ac_merit_a == ToshibaAcMeritA.HEATING_8C
+
+    @property
     def min_temp(self) -> float:
         """Return the minimum temperature."""
-        if (
-            hasattr(self._device, "ac_merit_a")
-            and self._device.ac_merit_a == ToshibaAcMeritA.HEATING_8C
-        ):
-            return 5
-        return 17
+        return HEATING_8C_MIN_TEMP if self._heating_8c_active else NORMAL_MIN_TEMP
 
     @property
     def max_temp(self) -> float:
-        """Return the maximum temperature."""
-        if (
-            hasattr(self._device, "ac_merit_a")
-            and self._device.ac_merit_a == ToshibaAcMeritA.HEATING_8C
-        ):
-            return 13
-        return 30
+        """Return the maximum temperature.
+
+        In frost protection, model 3 units (such as the Shorai Edge) accept up to
+        16 and model 2 units (such as the Shorai+) up to 13.
+        """
+        if not self._heating_8c_active:
+            return NORMAL_MAX_TEMP
+        return 16 if self._device.ac_model_id == "3" else 13
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:
