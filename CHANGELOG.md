@@ -34,6 +34,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   turning off ECO no longer ends outdoor unit silent mode.
 - A unit removed from the account can now really be deleted from its device page. Home
   Assistant used to refuse this, although the README said to do it.
+- Every refused login now counts toward the limit of 3 failed logins per hour, not only
+  those that name a wrong password.
 
 ## [0.1.0b2] - 2026-11-07
 

@@ -207,6 +207,10 @@ async def async_login(
         raise ToshibaAuthError("Toshiba rejected the login")
 
     if status != 200:
+        # Any other refusal may count toward a lockout too. A 5xx is Toshiba's own
+        # failure, and 403 and 429 were handled as blocks above.
+        if 400 <= status < 500:
+            await guard.async_record_login(username, success=False)
         raise ToshibaConnectionError(f"{LOGIN_PATH}: HTTP {status}")
 
     body = _parse_body(LOGIN_PATH, text)

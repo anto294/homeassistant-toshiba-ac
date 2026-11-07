@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
+import pytest
 
 from custom_components.toshiba_ac_link.const import DOMAIN
 from custom_components.toshiba_ac_link.toshiba import guard as guard_module
@@ -302,5 +303,49 @@ def test_energy_is_not_read_again_by_a_restart(run_in_hass) -> None:
             devices = await entry.runtime_data.get_devices()
             assert devices[0].ac_energy_consumption.energy_wh == 2000
             await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize("status", [400, 404, 422])
+def test_other_client_errors_count_as_failed_logins(run_in_hass, status) -> None:
+    """Toshiba may count them toward a lockout, so the form must stop as well."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.statuses["login"] = status
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": "user"}
+            )
+            for _ in range(MAX_FAILED_LOGINS):
+                result = await hass.config_entries.flow.async_configure(
+                    result["flow_id"], dict(ACCOUNT)
+                )
+                assert result["errors"] == {"base": "cannot_connect"}
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], dict(ACCOUNT)
+            )
+            assert result["errors"] == {"base": "too_many_attempts"}
+            assert fake.requests["login"] == MAX_FAILED_LOGINS
+
+    run_in_hass(scenario)
+
+
+def test_server_errors_do_not_count_as_failed_logins(run_in_hass) -> None:
+    """A 500 says nothing about the password, and the account did not fail anything."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.statuses["login"] = 500
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": "user"}
+            )
+            for _ in range(MAX_FAILED_LOGINS + 1):
+                result = await hass.config_entries.flow.async_configure(
+                    result["flow_id"], dict(ACCOUNT)
+                )
+                assert result["errors"] == {"base": "cannot_connect"}
+            assert fake.requests["login"] == MAX_FAILED_LOGINS + 1
 
     run_in_hass(scenario)
