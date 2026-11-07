@@ -33,7 +33,13 @@ from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
 _LOGGER = logging.getLogger(__name__)
 
+# Updates are pushed, and each command only sends one message to the cloud
+PARALLEL_UPDATES = 0
 
+
+# ---------------------------
+#   ToshibaAcSwitchDescription
+# ---------------------------
 @dataclass(frozen=True, kw_only=True)
 class ToshibaAcSwitchDescription(SwitchEntityDescription):
     """Describe a Toshiba AC switch entity type."""
@@ -68,6 +74,9 @@ class ToshibaAcSwitchDescription(SwitchEntityDescription):
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
+# ---------------------------
+#   ToshibaAcEnumSwitchDescription
+# ---------------------------
 @dataclass(frozen=True, kw_only=True)
 class ToshibaAcEnumSwitchDescription(
     ToshibaAcSwitchDescription,
@@ -98,6 +107,9 @@ class ToshibaAcEnumSwitchDescription(
         return self.ac_on_value in self.get_features_attr(features)
 
 
+# ---------------------------
+#   ToshibaAcWirelessLedSwitchDescription
+# ---------------------------
 @dataclass(frozen=True, kw_only=True)
 class ToshibaAcWirelessLedSwitchDescription(ToshibaAcSwitchDescription):
     """Describe the switch of the wireless LED."""
@@ -161,6 +173,9 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
 ]
 
 
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: ToshibaConfigEntry,
@@ -187,6 +202,9 @@ async def async_setup_entry(
         async_add_devices(new_entities)
 
 
+# ---------------------------
+#   ToshibaAcSwitchEntity
+# ---------------------------
 class ToshibaAcSwitchEntity(ToshibaAcStateEntity, SwitchEntity):
     """Provides a switch entity based on a ToshibaAcSwitchDescription."""
 

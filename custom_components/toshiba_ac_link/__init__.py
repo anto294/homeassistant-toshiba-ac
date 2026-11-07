@@ -57,6 +57,9 @@ NOTIFICATION_ID = "toshiba_ac_link_connection_refused"
 _original_send_message = toshiba_amqp_api.ToshibaAcAmqpApi.send_message
 
 
+# ---------------------------
+#   _patched_send_message
+# ---------------------------
 async def _patched_send_message(
     self: toshiba_amqp_api.ToshibaAcAmqpApi, message: str
 ) -> None:
@@ -87,6 +90,9 @@ _LOGGER = logging.getLogger(__name__)
 logging.getLogger("azure.iot.device").setLevel(logging.ERROR)
 
 
+# ---------------------------
+#   _create_device_manager
+# ---------------------------
 def _create_device_manager(entry: ToshibaConfigEntry) -> ToshibaAcDeviceManager:
     """Build the device manager from the stored account and tokens.
 
@@ -106,11 +112,17 @@ def _create_device_manager(entry: ToshibaConfigEntry) -> ToshibaAcDeviceManager:
     )
 
 
+# ---------------------------
+#   _async_connect
+# ---------------------------
 async def _async_connect(device_manager: ToshibaAcDeviceManager) -> str:
     """Connect and return the SAS token that is in use."""
     return await asyncio.wait_for(device_manager.connect(), timeout=CONNECT_TIMEOUT_S)
 
 
+# ---------------------------
+#   _async_shutdown
+# ---------------------------
 async def _async_shutdown(device_manager: ToshibaAcDeviceManager) -> None:
     """Close the connection, without letting a slow or failed close stop the caller."""
     try:
@@ -119,6 +131,9 @@ async def _async_shutdown(device_manager: ToshibaAcDeviceManager) -> None:
         _LOGGER.warning("Error while shutting down device manager: %s", ex)
 
 
+# ---------------------------
+#   _setup_error
+# ---------------------------
 def _setup_error(ex: Exception) -> HomeAssistantError:
     """Translate a connect failure into the error Home Assistant reacts to."""
     if isinstance(ex, TimeoutError):
@@ -139,6 +154,9 @@ def _setup_error(ex: Exception) -> HomeAssistantError:
     return ConfigEntryNotReady(f"Failed to connect to Toshiba AC service: {ex}")
 
 
+# ---------------------------
+#   _notify_connection_refused
+# ---------------------------
 def _notify_connection_refused(hass: HomeAssistant, message: str) -> None:
     """Surface the refusal in the UI, the log alone is easy to miss.
 
@@ -153,11 +171,17 @@ def _notify_connection_refused(hass: HomeAssistant, message: str) -> None:
     )
 
 
+# ---------------------------
+#   _clear_connection_notice
+# ---------------------------
 def _clear_connection_notice(hass: HomeAssistant) -> None:
     """Remove the notice once the integration works again. Callback, not coroutine."""
     persistent_notification.async_dismiss(hass, NOTIFICATION_ID)
 
 
+# ---------------------------
+#   async_setup
+# ---------------------------
 async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
     """Register the actions, which exist even when no entry is loaded."""
 
@@ -171,6 +195,9 @@ async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
     return True
 
 
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
     """Set up Toshiba Link from a config entry."""
     device_manager = _create_device_manager(entry)
@@ -229,6 +256,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> b
     return True
 
 
+# ---------------------------
+#   async_unload_entry
+# ---------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info("Unloading Toshiba Link integration")

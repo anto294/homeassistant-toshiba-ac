@@ -22,6 +22,9 @@ TO_REDACT = {
 }
 
 
+# ---------------------------
+#   async_get_config_entry_diagnostics
+# ---------------------------
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:

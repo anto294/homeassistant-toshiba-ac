@@ -25,7 +25,13 @@ from .entity import ToshibaAcEntity, ToshibaAcStateEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Updates are pushed, and each command only sends one message to the cloud
+PARALLEL_UPDATES = 0
 
+
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: ToshibaConfigEntry,
@@ -53,6 +59,9 @@ async def async_setup_entry(
         async_add_devices(new_entities)
 
 
+# ---------------------------
+#   ToshibaEnergySensor
+# ---------------------------
 class ToshibaEnergySensor(ToshibaAcEntity, SensorEntity):
     """Report the energy that the unit used since the start of the year."""
 
@@ -102,6 +111,9 @@ class ToshibaEnergySensor(ToshibaAcEntity, SensorEntity):
         return None
 
 
+# ---------------------------
+#   ToshibaTempSensor
+# ---------------------------
 class ToshibaTempSensor(ToshibaAcStateEntity, SensorEntity):
     """Provides a Toshiba Temperature Sensors."""
 

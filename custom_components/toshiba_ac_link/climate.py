@@ -35,6 +35,9 @@ from .feature_list import get_feature_by_name, get_feature_list
 
 _LOGGER = logging.getLogger(__name__)
 
+# Updates are pushed, and each command only sends one message to the cloud
+PARALLEL_UPDATES = 0
+
 NORMAL_MIN_TEMP = 17
 NORMAL_MAX_TEMP = 30
 HEATING_8C_MIN_TEMP = 5
@@ -70,6 +73,9 @@ SWING_TO_VERTICAL = {
 }
 
 
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: ToshibaConfigEntry,
@@ -86,6 +92,9 @@ async def async_setup_entry(
         async_add_devices(new_entities)
 
 
+# ---------------------------
+#   ToshibaClimate
+# ---------------------------
 class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
     """Provides a Toshiba climates."""
 

@@ -25,9 +25,15 @@ from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
 _LOGGER = logging.getLogger(__name__)
 
+# Updates are pushed, and each command only sends one message to the cloud
+PARALLEL_UPDATES = 0
+
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
+# ---------------------------
+#   ToshibaAcSelectDescription
+# ---------------------------
 @dataclass(frozen=True, kw_only=True)
 class ToshibaAcSelectDescription(SelectEntityDescription):
     """Describe a Toshiba AC select entity type."""
@@ -56,6 +62,9 @@ class ToshibaAcSelectDescription(SelectEntityDescription):
         return False
 
 
+# ---------------------------
+#   ToshibaAcEnumSelectDescription
+# ---------------------------
 @dataclass(frozen=True, kw_only=True)
 class ToshibaAcEnumSelectDescription(
     ToshibaAcSelectDescription,
@@ -130,6 +139,9 @@ _SELECT_DESCRIPTIONS: Sequence[ToshibaAcSelectDescription] = [
 ]
 
 
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: ToshibaConfigEntry,
@@ -156,6 +168,9 @@ async def async_setup_entry(
         async_add_devices(new_entities)
 
 
+# ---------------------------
+#   ToshibaAcSelectEntity
+# ---------------------------
 class ToshibaAcSelectEntity(ToshibaAcStateEntity, SelectEntity):
     """Provide a select based on a ToshibaAcSelectDescription."""
 

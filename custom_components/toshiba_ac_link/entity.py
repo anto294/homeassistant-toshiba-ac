@@ -14,6 +14,9 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
+# ---------------------------
+#   ToshibaAcEntity
+# ---------------------------
 class ToshibaAcEntity(Entity):
     """Representation of a Toshiba AC device entity."""
 
@@ -44,6 +47,9 @@ class ToshibaAcEntity(Entity):
         )
 
 
+# ---------------------------
+#   ToshibaAcStateEntity
+# ---------------------------
 class ToshibaAcStateEntity(ToshibaAcEntity):
     """Base class for entities that subscribe to the device's state_changed callback."""
 

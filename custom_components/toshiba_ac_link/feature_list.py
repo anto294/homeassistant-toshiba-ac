@@ -9,6 +9,9 @@ from toshiba_ac_community.utils import pretty_enum_name
 _LOGGER = logging.getLogger(__name__)
 
 
+# ---------------------------
+#   get_feature_list
+# ---------------------------
 def get_feature_list(feature_list: list[Any]) -> list[str]:
     """Return a list of features supported by the device."""
     return [pretty_enum_name(e) for e in feature_list if pretty_enum_name(e) != "None"]
@@ -17,6 +20,9 @@ def get_feature_list(feature_list: list[Any]) -> list[str]:
 T = TypeVar("T", bound=Enum)
 
 
+# ---------------------------
+#   get_feature_by_name
+# ---------------------------
 def get_feature_by_name(feature_list: list[T], feature_name: str) -> T | None:
     """Return the enum value of that item with the given name from a feature list."""
     _LOGGER.debug("searching %s for %s", feature_list, feature_name)

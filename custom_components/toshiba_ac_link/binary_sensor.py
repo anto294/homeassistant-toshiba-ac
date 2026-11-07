@@ -20,7 +20,13 @@ from .entity import ToshibaAcStateEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Updates are pushed, and each command only sends one message to the cloud
+PARALLEL_UPDATES = 0
 
+
+# ---------------------------
+#   async_setup_entry
+# ---------------------------
 async def async_setup_entry(
     _hass: HomeAssistant,
     config_entry: ToshibaConfigEntry,
@@ -44,6 +50,9 @@ async def async_setup_entry(
         async_add_devices(new_entities)
 
 
+# ---------------------------
+#   ToshibaAcSelfCleaningEntity
+# ---------------------------
 class ToshibaAcSelfCleaningEntity(ToshibaAcStateEntity, BinarySensorEntity):
     """Report whether the AC is self cleaning."""
 

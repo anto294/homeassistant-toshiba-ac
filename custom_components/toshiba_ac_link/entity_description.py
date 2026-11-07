@@ -11,6 +11,9 @@ _LOGGER = getLogger(__name__)
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
+# ---------------------------
+#   ToshibaAcEnumEntityDescriptionMixin
+# ---------------------------
 class ToshibaAcEnumEntityDescriptionMixin(Generic[TEnum]):
     """Mix in async_set_attr and get_attr helpers to dynamically set enum values."""
 
