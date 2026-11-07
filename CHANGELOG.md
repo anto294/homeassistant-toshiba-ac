@@ -30,6 +30,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   info level.
 - Toggling a unit that is cleaning itself now turns it on, since the entity shows it as
   off. It used to send another off.
+- Turning off a switch that is already off no longer clears another function. For example,
+  turning off ECO no longer ends outdoor unit silent mode.
 
 ## [0.1.0b2] - 2026-11-07
 

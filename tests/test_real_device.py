@@ -16,7 +16,10 @@ import pytest
 from custom_components.toshiba_ac_link.toshiba.api import ToshibaApi
 
 from custom_components.toshiba_ac_link.toshiba.device import ToshibaAcDevice
-from custom_components.toshiba_ac_link.toshiba.properties import ToshibaAcMode
+from custom_components.toshiba_ac_link.toshiba.properties import (
+    ToshibaAcMeritA,
+    ToshibaAcMode,
+)
 
 from .fake_toshiba import (
     OTHER_UNIT_ID,
@@ -485,6 +488,39 @@ def test_toggle_follows_what_the_entity_shows_during_self_cleaning(run_in_hass) 
                 "climate", "toggle", {"entity_id": CLIMATE}, blocking=True
             )
             assert fake.commands[1]["payload"]["data"].startswith("31")
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_turning_off_a_switch_that_is_off_keeps_the_shared_setting(run_in_hass) -> None:
+    """ECO, high power, 8 °C and silent share one field, so an off would clear them."""
+    eco = "switch.living_room_eco_mode"
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+            unit = await the_unit(entry)
+
+            await unit.set_ac_merit_a(ToshibaAcMeritA.CDU_SILENT_1)
+            assert fake.requests["command"] == 1
+
+            await hass.services.async_call(
+                "switch", "turn_off", {"entity_id": eco}, blocking=True
+            )
+            assert fake.requests["command"] == 1
+            assert unit.ac_merit_a is ToshibaAcMeritA.CDU_SILENT_1
+
+            await hass.services.async_call(
+                "switch", "turn_on", {"entity_id": eco}, blocking=True
+            )
+            assert unit.ac_merit_a is ToshibaAcMeritA.ECO
+            await hass.services.async_call(
+                "switch", "turn_off", {"entity_id": eco}, blocking=True
+            )
+            assert fake.requests["command"] == 3
+            assert unit.ac_merit_a is ToshibaAcMeritA.OFF
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)

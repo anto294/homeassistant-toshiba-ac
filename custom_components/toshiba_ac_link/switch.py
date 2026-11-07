@@ -91,8 +91,13 @@ class ToshibaAcEnumSwitchDescription(
     ac_attr_setter: str = ""
 
     async def async_turn_off(self, device: ToshibaAcDevice) -> None:
-        """Turn the switch off."""
-        await self.async_set_attr(device, self.ac_off_value)
+        """Turn the switch off, if it is on.
+
+        ECO, high power, 8 °C and silent share one field of the unit, so an off from
+        a switch that is already off would clear whichever of the others is active.
+        """
+        if self.is_on(device):
+            await self.async_set_attr(device, self.ac_off_value)
 
     async def async_turn_on(self, device: ToshibaAcDevice) -> None:
         """Turn the switch on."""
