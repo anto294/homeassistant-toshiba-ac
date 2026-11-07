@@ -71,13 +71,12 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         | ClimateEntityFeature.TURN_OFF
     )
     _attr_target_temperature_step = 1
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(self, toshiba_device: ToshibaAcDevice):
         """Initialize the climate."""
         super().__init__(toshiba_device)
 
-        self._enable_turn_on_off_backwards_compatibility = False
         self._attr_unique_id = f"{self._device.ac_unique_id}_climate"
         self._attr_fan_modes = get_feature_list(self._device.supported.ac_fan_mode)
         self._attr_swing_modes = get_feature_list(self._device.supported.ac_swing_mode)
@@ -221,12 +220,12 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         return pretty_enum_name(self._device.ac_swing_mode)
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         """Return the current temperature."""
         return self._device.ac_indoor_temperature
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         """Return the temperature we try to reach."""
         return self._device.ac_temperature
 
