@@ -32,7 +32,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     devices: list[ToshibaAcDevice] = await device_manager.get_devices()
     for device in devices:
         if device.supported.ac_energy_report:
-            new_entities.append(ToshibaPowerSensor(device))
+            new_entities.append(ToshibaEnergySensor(device))
         else:
             _LOGGER.debug(
                 "AC device %s does not support energy monitoring", device.name
@@ -47,40 +47,45 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         async_add_devices(new_entities)
 
 
-class ToshibaPowerSensor(ToshibaAcEntity, SensorEntity):
-    """Provides a Toshiba Sensors."""
+class ToshibaEnergySensor(ToshibaAcEntity, SensorEntity):
+    """Report the energy that the unit used since the start of the year."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = "energy_consumption"
     _attr_native_unit_of_measurement = UnitOfEnergy.WATT_HOUR
     _attr_device_class = SensorDeviceClass.ENERGY
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_state_class = SensorStateClass.TOTAL
     _ac_energy_consumption: ToshibaAcDeviceEnergyConsumption | None = None
 
-    def __init__(self, toshiba_device: ToshibaAcDevice):
+    def __init__(self, toshiba_device: ToshibaAcDevice) -> None:
         """Initialize the sensor."""
         super().__init__(toshiba_device)
         self._attr_unique_id = f"{self._device.ac_unique_id}_sensor"
-        self._attr_name = f"{self._device.name} Power Consumption"
 
-    async def state_changed(self, _dev: ToshibaAcDevice):
-        """Call if we need to change the ha state."""
+    def _update_energy_consumption(self) -> None:
+        """Read the latest energy consumption from the device."""
         self._ac_energy_consumption = self._device.ac_energy_consumption
+        self._attr_last_reset = (
+            self._ac_energy_consumption.since if self._ac_energy_consumption else None
+        )
+
+    async def state_changed(self, _dev: ToshibaAcDevice) -> None:
+        """Write the state after the device reported new values."""
+        self._update_energy_consumption()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """Run when this Entity has been added to HA."""
-        # Importantly for a push integration, the module that will be getting updates
-        # needs to notify HA of changes. The dummy device has a registercallback
-        # method, so to this we add the 'self.async_write_ha_state' method, to be
-        # called where ever there are changes.
-        # The call back registration is done once this entity is registered with HA
-        # (rather than in the __init__)
-        # self._device.register_callback(self.async_write_ha_state)
-        self._device.on_energy_consumption_changed_callback.add(self.state_changed)
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to updates, and read what arrived before the entity was added.
 
-    async def async_will_remove_from_hass(self):
-        """Entity being removed from hass."""
-        # The opposite of async_added_to_hass. Remove any registered call backs here.
-        # self._device.remove_callback(self.async_write_ha_state)
+        The device manager fetches energy as soon as it finds the devices, and the
+        next fetch is an hour later, so a first update that is missed here would
+        leave the sensor unknown for that long.
+        """
+        self._device.on_energy_consumption_changed_callback.add(self.state_changed)
+        self._update_energy_consumption()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from updates."""
         self._device.on_energy_consumption_changed_callback.remove(self.state_changed)
 
     @property
@@ -89,13 +94,6 @@ class ToshibaPowerSensor(ToshibaAcEntity, SensorEntity):
         if self._ac_energy_consumption:
             return self._ac_energy_consumption.energy_wh
         return None
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes."""
-        if self._ac_energy_consumption:
-            return {"last_reset": self._ac_energy_consumption.since}
-        return {}
 
 
 class ToshibaTempSensor(ToshibaAcStateEntity, SensorEntity):
