@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0b1] - 2026-11-07
+
 The first version of Toshiba Link. It is a separate integration with its own
 `toshiba_ac_link` domain, which started from version 2026.10.0 of
 [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac)
