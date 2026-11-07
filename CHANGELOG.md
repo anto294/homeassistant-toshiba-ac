@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+- The migration guide no longer says that most entity IDs stay the same. It now explains
+  that they can change, also by starting with the area of the unit, and that device actions
+  in scripts and automations must point to the new device.
+
 ## [0.1.1] - 2026-11-07
 
 ### Added

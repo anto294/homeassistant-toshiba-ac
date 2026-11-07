@@ -108,7 +108,7 @@ Each unit becomes a device. An entity only exists if the unit has the function.
 
 Outside the 8 °C mode, the target temperature goes from 17 to 30 °C, in whole degrees. Except for the wireless LED, switches and selects are unavailable when they do not apply, such as while the unit is off or in a mode that does not allow them. So on a unit that is off, most of them are unavailable, which is normal. Which functions a unit has comes from the data that Toshiba reports for it.
 
-The first part of an entity ID comes from the name of the unit in the app, and the rest from the name of the entity in the language of your Home Assistant. For example, the same switch can be `switch.living_room_eco_mode` or `switch.clima_soggiorno_modalita_eco`. Check yours under **Settings → Devices & services**, also when you copy the examples below.
+An entity ID comes from the name of the unit in the app and the name of the entity in the language of your Home Assistant, and can start with the area of the unit. For example, the same switch can be `switch.living_room_eco_mode`, `switch.clima_soggiorno_modalita_eco` or `switch.soggiorno_clima_soggiorno_modalita_eco`. Check yours under **Settings → Devices & services**, also when you copy the examples below.
 
 ## How it works
 
@@ -283,7 +283,9 @@ Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshib
 1. Note the entity IDs that your automations and dashboards use.
 2. Delete the entry of the old integration, and uninstall it.
 3. Install Toshiba Link and add your account.
-4. Check your automations and dashboards. Entity IDs are built from the name of each unit and the language of Home Assistant, so most stay the same, except these:
+4. Check your automations, scripts and dashboards, because what refers to the old integration can stop working:
+   - Entity IDs can change. They are built from the name of each unit and the language of Home Assistant, and can start with the area of the unit. For example, `climate.clima_cucina` can become `climate.cucina_clima_cucina`, and `switch.clima_cucina_eco_mode` can become `switch.cucina_clima_cucina_modalita_eco`. To keep a dashboard or a script as it is, give the entity its old ID back in the settings of the entity.
+   - Device actions, triggers and conditions refer to the old device, which no longer exists, so choose the new device in them. Home Assistant disables a script that has such an action, and reports it under **Settings → System → Repairs**.
    - The energy sensor is now called `..._energy_consumption`. On the original integration it was `..._power_consumption`.
    - The indoor temperature sensor starts disabled, because the climate entity shows the same value. If your automations or dashboards use it, enable it in the settings of the entity.
    - History stays with the old entities, because they belong to another integration.
