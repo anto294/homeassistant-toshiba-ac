@@ -17,6 +17,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - A unit with data that cannot be read is now skipped with a warning, and no longer stops
   the whole account. If no unit can be read, setup retries. Unexpected answers no longer
   end the periodic requests or the realtime channel for good.
+- The energy sensor now becomes unavailable and available again with the connection, like
+  the other entities.
 
 ## [0.1.0b2] - 2026-11-07
 

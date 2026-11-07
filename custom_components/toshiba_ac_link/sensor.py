@@ -21,7 +21,7 @@ from homeassistant.const import UnitOfEnergy, UnitOfTemperature
 from homeassistant.helpers.typing import StateType
 
 from . import ToshibaConfigEntry
-from .entity import ToshibaAcEntity, ToshibaAcStateEntity
+from .entity import ToshibaAcStateEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def async_setup_entry(
 # ---------------------------
 #   ToshibaEnergySensor
 # ---------------------------
-class ToshibaEnergySensor(ToshibaAcEntity, SensorEntity):
+class ToshibaEnergySensor(ToshibaAcStateEntity, SensorEntity):
     """Report the energy that the unit used since the start of the year."""
 
     _attr_has_entity_name = True
@@ -90,18 +90,20 @@ class ToshibaEnergySensor(ToshibaAcEntity, SensorEntity):
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
-        """Subscribe to updates, and read what arrived before the entity was added.
+        """Subscribe to readings and to the connection, and read what arrived before.
 
         The device manager fetches energy as soon as it finds the devices, and the
         next fetch is an hour later, so a first update that is missed here would
         leave the sensor unknown for that long.
         """
+        await super().async_added_to_hass()
         self._device.on_energy_consumption_changed_callback.add(self.state_changed)
         self._update_energy_consumption()
 
     async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from updates."""
         self._device.on_energy_consumption_changed_callback.remove(self.state_changed)
+        await super().async_will_remove_from_hass()
 
     @property
     def native_value(self) -> StateType | date | datetime:

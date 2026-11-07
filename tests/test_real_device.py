@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 import pytest
 
 from custom_components.toshiba_ac_link.toshiba.api import ToshibaApi
@@ -20,6 +21,7 @@ from custom_components.toshiba_ac_link.toshiba.properties import ToshibaAcMode
 from .fake_toshiba import (
     OTHER_UNIT_ID,
     RUNNING_STATE,
+    UNIT_ID,
     FakeToshiba,
     add_real_entry,
     run_fake_toshiba,
@@ -278,5 +280,35 @@ def test_a_bad_channel_address_is_a_failed_attempt(run_in_hass, caplog, answer) 
         ours = [r for r in caplog.records if r.name.startswith("custom_components")]
         assert ours
         assert not [r for r in ours if "secret-url" in r.getMessage()]
+
+    run_in_hass(scenario)
+
+
+def test_the_energy_sensor_follows_the_connection(run_in_hass) -> None:
+    """It only listened for new readings, so availability stayed as it was at start."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units = [FakeToshiba.unit(model="3", merit="2c03")]
+            fake.refuse_sockets = True
+            energy = "sensor.living_room_energy_consumption"
+            with (
+                patch(f"{REALTIME}.RETRY_MIN_S", 0.05),
+                patch(f"{MANAGER}.FIRST_CONNECTION_WAIT_S", 0.01),
+            ):
+                entry = await add_real_entry(hass)
+                await hass.async_block_till_done()
+                assert hass.states.get(energy).state == "unavailable"
+
+                fake.refuse_sockets = False
+                await wait_until(lambda: hass.states.get(energy).state == "2000")
+
+                await fake.sockets[-1].close()
+                await wait_until(lambda: hass.states.get(energy).state == "unavailable")
+                await wait_until(lambda: hass.states.get(energy).state == "2000")
+
+                registry = er.async_get(hass)
+                assert registry.async_get(energy).unique_id == f"{UNIT_ID}_sensor"
+                await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
