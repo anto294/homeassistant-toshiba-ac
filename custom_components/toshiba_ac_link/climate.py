@@ -27,7 +27,6 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
-from .const import DOMAIN
 from .entity import ToshibaAcStateEntity
 from .feature_list import get_feature_by_name, get_feature_list
 
@@ -70,7 +69,7 @@ SWING_TO_VERTICAL = {
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add climate entities for passed config_entry in HA."""
-    device_manager = hass.data[DOMAIN][config_entry.entry_id]
+    device_manager = config_entry.runtime_data
 
     devices = await device_manager.get_devices()
     new_entities = [ToshibaClimate(device) for device in devices]

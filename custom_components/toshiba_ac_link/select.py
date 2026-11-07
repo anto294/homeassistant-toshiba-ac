@@ -17,7 +17,6 @@ from toshiba_ac_community.device import (
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 
-from .const import DOMAIN
 from .entity import ToshibaAcStateEntity
 from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
@@ -129,7 +128,7 @@ _SELECT_DESCRIPTIONS: Sequence[ToshibaAcSelectDescription] = [
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add select entities for passed config_entry in HA."""
-    device_manager = hass.data[DOMAIN][config_entry.entry_id]
+    device_manager = config_entry.runtime_data
     new_entities = []
 
     devices: list[ToshibaAcDevice] = await device_manager.get_devices()

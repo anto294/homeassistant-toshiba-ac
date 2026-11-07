@@ -154,7 +154,6 @@ def _clear_connection_notice(hass: HomeAssistant) -> None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the Toshiba Link component."""
-    hass.data.setdefault(DOMAIN, {})
     return True
 
 
@@ -208,8 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _async_shutdown(device_manager)
         raise _setup_error(ex) from ex
 
-    # Store device manager
-    hass.data[DOMAIN][entry.entry_id] = device_manager
+    entry.runtime_data = device_manager
 
     # Register reconnect service (once per domain)
     await _async_register_services(hass)
@@ -242,6 +240,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        await _async_shutdown(hass.data[DOMAIN].pop(entry.entry_id))
+        await _async_shutdown(entry.runtime_data)
 
     return unload_ok

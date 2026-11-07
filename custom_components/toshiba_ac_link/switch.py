@@ -25,7 +25,6 @@ from homeassistant.components.switch import (
 
 from homeassistant.const import EntityCategory
 
-from .const import DOMAIN
 from .entity import ToshibaAcStateEntity
 from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
@@ -161,7 +160,7 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add switch entities for passed config_entry in HA."""
-    device_manager = hass.data[DOMAIN][config_entry.entry_id]
+    device_manager = config_entry.runtime_data
     new_entities = []
 
     devices: list[ToshibaAcDevice] = await device_manager.get_devices()
