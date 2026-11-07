@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+- Turning off the 8 °C mode no longer leaves a target of 29 °C or more, at which a unit
+  could really heat. It now goes back to the earlier target, or to 20 °C if that is not
+  known. Turning the mode on now sets a target of 8 °C, instead of showing 2 °C or 6 °C.
+
 ## [0.1.0b3] - 2026-11-07
 
 ### Added

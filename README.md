@@ -101,7 +101,7 @@ Each unit becomes a device. An entity only exists if the unit has the function.
 | Self cleaning | Binary sensor | On while the unit is cleaning itself. The climate entity shows off during this time, as the app does |
 | Outdoor unit silent mode | Select | Off, Silent 1, Silent 2 |
 | Fireplace mode | Select | Off, Fireplace 1, Fireplace 2 |
-| 8 °C mode | Switch | Frost protection, with a target of 5 to 13 °C, or to 16 °C on model 3 units |
+| 8 °C mode | Switch | Frost protection, with a target of 5 to 13 °C, or to 16 °C on model 3 units. Turning it on sets the target to 8 °C. Turning it off goes back to the earlier target, or to 20 °C if that is not known |
 | Air purifier | Switch | |
 | ECO mode | Switch | |
 | High power mode | Switch | |

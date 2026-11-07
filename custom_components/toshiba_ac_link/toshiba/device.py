@@ -48,6 +48,11 @@ T = TypeVar("T")
 # The state is 19 bytes in the library's encoding, and 22 in the app's commands
 COMMAND_HEX_LENGTH = 44
 
+# In 8 °C mode the wire value is the target plus 16, so entering and leaving the mode
+# with the same wire value turns 18 °C into 2 °C, and 13 °C into 29 °C
+TARGET_ENTERING_8C = 8
+TARGET_LEAVING_8C = 20
+
 
 # ---------------------------
 #   ToshibaAcCallback
@@ -117,6 +122,7 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
             ToshibaAcDevice
         ] = ToshibaAcCallback()
         self._ac_energy_consumption: ToshibaAcDeviceEnergyConsumption | None = None
+        self._target_before_8c: int | None = None
 
     @property
     def connected(self) -> bool:
@@ -212,11 +218,25 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         ):
             state.ac_self_cleaning = ToshibaAcSelfCleaning.OFF
 
+        # What _limit_to_supported left decides, since a mode without 8 °C takes it out
+        in_8c = self.ac_merit_a == ToshibaAcMeritA.HEATING_8C
+        entering_8c = not in_8c and state.ac_merit_a == ToshibaAcMeritA.HEATING_8C
+        leaving_8c = in_8c and state.ac_merit_a not in (
+            ToshibaAcMeritA.NONE,
+            ToshibaAcMeritA.HEATING_8C,
+        )
+        if state.ac_temperature is None:
+            if entering_8c:
+                state.ac_temperature = TARGET_ENTERING_8C
+            elif leaving_8c:
+                state.ac_temperature = self._target_before_8c or TARGET_LEAVING_8C
+        target_before_8c = self.ac_temperature if entering_8c else None
+
         # In 8 °C mode the wire value is 16 degrees above the setpoint
         if (
             state.ac_temperature is not None
             and future.ac_mode == ToshibaAcMode.HEAT
-            and future.ac_merit_a == ToshibaAcMeritA.HEATING_8C
+            and (entering_8c or (in_8c and not leaving_8c))
         ):
             state.ac_temperature = state.ac_temperature + 16
 
@@ -224,6 +244,8 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         await self._send_command(
             self.ac_unique_id, hex_state.ljust(COMMAND_HEX_LENGTH, "f")
         )
+        if entering_8c:
+            self._target_before_8c = target_before_8c
         await self.async_update_state(hex_state)
 
     @property

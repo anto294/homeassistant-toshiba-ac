@@ -75,8 +75,9 @@ always merged. Measured on two accounts:
   it, and a slow answer from the unit must never lead to a repeat.
 - In the 8 °C mode the wire value is the target plus 16. A model 3 unit held it at 32, or
   16 °C, when sent more, so its limit is 16 although the app's code suggests 30. Model 2
-  accepted 10 and 13 °C, and more was not tried. Entering this mode leaves the wire value
-  as it was, and so does leaving it.
+  accepted 10 and 13 °C, and more was not tried. Entering and leaving this mode does not
+  change the wire value by itself, so 13 °C would become 29 °C. So `send_state_to_ac` sends
+  a target with both: 8 °C, and then the earlier target or 20 °C.
 - Of about 30 accepted commands, two on one unit in a row got no echo, and the unit did not
   apply them, although Toshiba answered `Success`. The same sequence worked when repeated.
 - A unit reports its swing byte by itself when it turns on and off, with messages that do

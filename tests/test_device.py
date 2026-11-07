@@ -356,3 +356,85 @@ async def test_a_legacy_preset_the_unit_lacks_is_still_taken_out() -> None:
     await unit.set_ac_swing_mode(ToshibaAcSwingMode.FIXED_1)
 
     assert sent_state(unit).ac_swing_mode is ToshibaAcSwingMode.NONE
+
+
+HEATING = "3043124131640010171bfe0b00001002000000"
+IN_8C = "3043184131640410171bfe0b00001002000000"
+
+
+async def test_entering_8c_mode_sends_a_target_it_can_show() -> None:
+    """The old wire value would read as 2 °C here, below what the mode allows."""
+    unit = make_unit(HEATING)
+
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+
+    state = sent_state(unit)
+    assert state.ac_merit_a is ToshibaAcMeritA.HEATING_8C
+    assert state.ac_temperature == 24
+    assert unit.ac_temperature == 8
+
+
+async def test_leaving_8c_mode_goes_back_to_the_earlier_target() -> None:
+    """The wire value of 8 °C mode would read as 29 °C, and the unit could heat to it."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+    await unit.set_ac_temperature(13)
+    unit._send_command.reset_mock()
+
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+
+    state = sent_state(unit)
+    assert state.ac_merit_a is ToshibaAcMeritA.OFF
+    assert state.ac_temperature == 18
+    assert unit.ac_temperature == 18
+
+
+async def test_leaving_8c_mode_without_an_earlier_target_uses_a_safe_one() -> None:
+    """After a restart nothing is known about the time before the mode."""
+    unit = make_unit(IN_8C)
+    assert unit.ac_temperature == 8
+
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+
+    assert sent_state(unit).ac_temperature == 20
+    assert unit.ac_temperature == 20
+
+
+@pytest.mark.parametrize(
+    ("setter", "value"),
+    [
+        ("set_ac_merit_a", ToshibaAcMeritA.ECO),
+        ("set_ac_mode", ToshibaAcMode.COOL),
+    ],
+)
+async def test_every_way_out_of_8c_mode_corrects_the_target(setter, value) -> None:
+    """Another function in the same field, or a mode without 8 °C, also ends it."""
+    unit = make_unit(IN_8C)
+
+    await getattr(unit, setter)(value)
+
+    state = sent_state(unit)
+    assert state.ac_temperature == 20
+    assert unit.ac_merit_a is not ToshibaAcMeritA.HEATING_8C
+    assert unit.ac_temperature == 20
+
+
+async def test_other_commands_in_8c_mode_leave_the_target_alone() -> None:
+    """Only entering and leaving touch it."""
+    unit = make_unit(IN_8C)
+
+    await unit.set_ac_fan_mode(ToshibaAcFanMode.LOW)
+
+    assert sent_state(unit).ac_temperature is None
+    assert unit.ac_temperature == 8
+
+
+async def test_a_temperature_in_8c_mode_is_not_taken_for_the_earlier_one() -> None:
+    """Leaving later must not bring a frost target back as a normal one."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_temperature(22)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+    await unit.set_ac_temperature(6)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+
+    assert unit.ac_temperature == 22
