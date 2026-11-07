@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 
-from custom_components.toshiba_ac import async_setup_entry
-from custom_components.toshiba_ac.const import DOMAIN
+from custom_components.toshiba_ac_link import async_setup_entry
+from custom_components.toshiba_ac_link.const import DOMAIN
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 
@@ -25,7 +25,7 @@ def create_mock_entry():
 def create_mock_hass():
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
-    hass.data = {"toshiba_ac": {}}  # Domain data must be pre-initialized
+    hass.data = {"toshiba_ac_link": {}}  # Domain data must be pre-initialized
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_update_entry = MagicMock()
@@ -49,7 +49,7 @@ class TestConnectionTimeout:
         mock_device_manager.on_sas_token_updated_callback = MagicMock()
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=mock_device_manager,
         ):
             result = await async_setup_entry(self.hass, self.entry)
@@ -67,7 +67,7 @@ class TestConnectionTimeout:
         mock_device_manager.connect = slow_connect
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=mock_device_manager,
         ):
             with pytest.raises(ConfigEntryNotReady) as exc_info:
@@ -81,7 +81,7 @@ class TestConnectionTimeout:
         mock_device_manager.connect = AsyncMock(side_effect=Exception("401 Unauthorized"))
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=mock_device_manager,
         ):
             with pytest.raises(ConfigEntryAuthFailed):
@@ -96,7 +96,7 @@ class TestConnectionTimeout:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=mock_device_manager,
         ):
             with pytest.raises(ConfigEntryNotReady) as exc_info:

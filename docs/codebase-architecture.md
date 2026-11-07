@@ -69,7 +69,7 @@ connection behaviour:
 
 | Situation | What the user sees |
 |-----------|-------------------|
-| A command is sent over a refused connection | Service call fails with a message naming the second instance and pointing at `toshiba_ac.reconnect` |
+| A command is sent over a refused connection | Service call fails with a message naming the second instance and pointing at `toshiba_ac_link.reconnect` |
 | Setup registers a fresh SAS token and the broker still refuses | The same message, plus a persistent notification |
 | Setup succeeds again | The notification is dismissed |
 

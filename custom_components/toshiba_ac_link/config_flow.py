@@ -1,4 +1,4 @@
-"""Config flow for Toshiba AC integration."""
+"""Config flow for the Toshiba Link integration."""
 from __future__ import annotations
 
 import asyncio
@@ -66,7 +66,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Toshiba AC."""
+    """Handle a config flow for Toshiba Link."""
 
     VERSION = 1
 

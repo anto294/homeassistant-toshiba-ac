@@ -14,7 +14,7 @@ from azure.iot.device.exceptions import CredentialError
 from conftest import persistent_notification_mock
 import pytest
 
-from custom_components.toshiba_ac import (  # noqa: E402
+from custom_components.toshiba_ac_link import (  # noqa: E402
     NOTIFICATION_ID,
     ONE_CONNECTION_HINT,
     async_setup_entry,
@@ -43,7 +43,7 @@ def create_mock_entry(sas_token=VALID_TOKEN):
 def create_mock_hass():
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
-    hass.data = {"toshiba_ac": {}}
+    hass.data = {"toshiba_ac_link": {}}
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_update_entry = MagicMock()
@@ -118,7 +118,7 @@ class TestNotificationApiShape:
         """The helpers must not be coroutine functions."""
         import inspect
 
-        from custom_components.toshiba_ac import (
+        from custom_components.toshiba_ac_link import (
             _clear_connection_notice,
             _notify_connection_refused,
         )
@@ -134,7 +134,7 @@ class TestNotificationApiShape:
         manager = create_mock_device_manager(["new_token"])
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             assert await async_setup_entry(hass, entry) is True
@@ -159,7 +159,7 @@ class TestSetupNotice:
         notification_mock.reset_mock()
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             with pytest.raises(ConfigEntryNotReady) as excinfo:
@@ -188,7 +188,7 @@ class TestSetupNotice:
         notification_mock.reset_mock()
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             with pytest.raises(ConfigEntryNotReady):
@@ -207,7 +207,7 @@ class TestSetupNotice:
         notification_mock.reset_mock()
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             assert await async_setup_entry(hass, entry) is True

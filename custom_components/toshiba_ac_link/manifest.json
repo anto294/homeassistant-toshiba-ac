@@ -1,6 +1,6 @@
 {
-  "domain": "toshiba_ac",
-  "name": "Toshiba AC",
+  "domain": "toshiba_ac_link",
+  "name": "Toshiba Link",
   "codeowners": ["@h4de5"],
   "config_flow": true,
   "dependencies": [],

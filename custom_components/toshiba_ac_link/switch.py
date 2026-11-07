@@ -1,4 +1,4 @@
-"""Switch platform for the Toshiba AC integration."""
+"""Switch platform for the Toshiba Link integration."""
 from __future__ import annotations
 
 from collections.abc import Sequence

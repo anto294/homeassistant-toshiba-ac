@@ -183,7 +183,7 @@ another login against the rate-limited Toshiba API.
 The access token is not refreshed on a schedule. It is obtained once per
 bootstrap run and lives for the lifetime of the HTTP session. When the session
 is torn down and set up again — a Home Assistant restart, a reload, or the
-`toshiba_ac.reconnect` service — the whole bootstrap runs again and a fresh
+`toshiba_ac_link.reconnect` service — the whole bootstrap runs again and a fresh
 access token is fetched.
 
 ## Three setup phases, three different failure behaviours

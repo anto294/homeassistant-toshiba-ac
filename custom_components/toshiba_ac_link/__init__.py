@@ -1,4 +1,4 @@
-"""The Toshiba AC integration."""
+"""The Toshiba Link integration."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ toshiba_http_api.ToshibaAcHttpApi._ensure_session = _patched_ensure_session
 ONE_CONNECTION_HINT = (
     "Toshiba allows only one active connection per account. Another Home "
     "Assistant instance or the Toshiba app is most likely holding it. Stop "
-    "that one and call the toshiba_ac.reconnect service here."
+    "that one and call the toshiba_ac_link.reconnect service here."
 )
 
 CONNECTION_REFUSED_ERROR = (
@@ -68,7 +68,7 @@ CONNECTION_DROPPED_ERROR = (
     f"{ONE_CONNECTION_HINT}"
 )
 
-NOTIFICATION_ID = "toshiba_ac_connection_refused"
+NOTIFICATION_ID = "toshiba_ac_link_connection_refused"
 
 
 async def _patched_send_message(
@@ -171,7 +171,7 @@ def _notify_connection_refused(hass: HomeAssistant, message: str) -> None:
     persistent_notification.async_create(
         hass,
         message,
-        title="Toshiba AC: cloud connection refused",
+        title="Toshiba Link: cloud connection refused",
         notification_id=NOTIFICATION_ID,
     )
 
@@ -182,13 +182,13 @@ def _clear_connection_notice(hass: HomeAssistant) -> None:
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the Toshiba AC component."""
+    """Set up the Toshiba Link component."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Toshiba AC from a config entry."""
+    """Set up Toshiba Link from a config entry."""
     device_manager = _create_device_manager(entry)
 
     try:
@@ -262,7 +262,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading Toshiba AC integration")
+    _LOGGER.info("Unloading Toshiba Link integration")
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

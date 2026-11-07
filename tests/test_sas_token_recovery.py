@@ -6,7 +6,7 @@ from azure.iot.device.common.transport_exceptions import UnauthorizedError
 from azure.iot.device.exceptions import CredentialError
 import pytest
 
-from custom_components.toshiba_ac import (  # noqa: E402
+from custom_components.toshiba_ac_link import (  # noqa: E402
     _create_device_manager,
     _sas_token_is_expired,
     async_setup_entry,
@@ -38,7 +38,7 @@ def create_mock_entry(sas_token):
 def create_mock_hass():
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
-    hass.data = {"toshiba_ac": {}}
+    hass.data = {"toshiba_ac_link": {}}
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_update_entry = MagicMock()
@@ -77,7 +77,7 @@ class TestSasTokenExpiry:
     def test_expired_token_not_handed_to_device_manager(self):
         entry = create_mock_entry(make_sas_token(int(time.time()) - 10))
 
-        with patch("custom_components.toshiba_ac.ToshibaAcDeviceManager") as manager:
+        with patch("custom_components.toshiba_ac_link.ToshibaAcDeviceManager") as manager:
             _create_device_manager(entry)
 
         assert manager.call_args.args[3] is None
@@ -86,7 +86,7 @@ class TestSasTokenExpiry:
         sas_token = make_sas_token(int(time.time()) + 3600)
         entry = create_mock_entry(sas_token)
 
-        with patch("custom_components.toshiba_ac.ToshibaAcDeviceManager") as manager:
+        with patch("custom_components.toshiba_ac_link.ToshibaAcDeviceManager") as manager:
             _create_device_manager(entry)
 
         assert manager.call_args.args[3] == sas_token
@@ -109,7 +109,7 @@ class TestSasTokenRecovery:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             assert await async_setup_entry(self.hass, self.entry) is True
@@ -129,7 +129,7 @@ class TestSasTokenRecovery:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             assert await async_setup_entry(self.hass, self.entry) is True
@@ -147,7 +147,7 @@ class TestSasTokenRecovery:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             assert await async_setup_entry(self.hass, self.entry) is True
@@ -165,7 +165,7 @@ class TestSasTokenRecovery:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             with pytest.raises(ConfigEntryNotReady):
@@ -179,7 +179,7 @@ class TestSasTokenRecovery:
         )
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             with pytest.raises(ConfigEntryNotReady):
@@ -197,7 +197,7 @@ class TestSasTokenRecovery:
         manager.sas_token = None
 
         with patch(
-            "custom_components.toshiba_ac.ToshibaAcDeviceManager",
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
             return_value=manager,
         ):
             with pytest.raises(ConfigEntryNotReady):
