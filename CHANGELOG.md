@@ -16,28 +16,30 @@ and includes work from version 2026.10.0 of
 ### Before you upgrade
 
 - **It does not take over an existing installation.** Remove the old integration
-  first, because Toshiba allows one connection per account. See "Migrating from another
-  Toshiba integration" in the README.
+  first, so that its requests and logins stop. See "Migrating from another Toshiba
+  integration" in the README.
 - **It needs Home Assistant 2026.11.0 or later.**
 
 ### Added
 
-- A reauthentication step: when the password stops working, Home Assistant asks for the
-  new one.
+- A reauthentication step: when the token stops working, Home Assistant asks for the
+  password.
 - Indoor temperature sensor, self cleaning binary sensor, and wireless LED switch.
 - Horizontal swing on units with independent vanes.
-- The integration reloads by itself when the cloud connection is lost and does not come
-  back within 30 seconds.
+- Limits that protect the account and survive restarts: at most 120 requests per hour,
+  a wait of 15 minutes or more when Toshiba asks to slow down, and at most 3 failed logins
+  per hour. A loop of restarts costs what one start costs.
 - Italian translation, icons in `icons.json`, and the brand images inside the integration.
 
 ### Changed
 
-- The protocol library is now `toshiba-ac-community` instead of `toshiba-ac`. It spaces
-  out its requests and retries them, and sends a stable Device-ID.
-- A restart no longer needs a new login, because the access token is stored. A new SAS
-  token is registered at each start instead of reusing a stored one.
-- Only a rejected login now asks for the password. WAF and rate limit responses keep
-  retrying.
+- A native client replaces the protocol library and the Azure IoT SDK. It uses the same
+  channel as the current Toshiba app, Azure Web PubSub, and HTTPS for commands.
+- The password is no longer stored, and only the forms log in. When the token stops
+  working, in about two years or after a password change, Home Assistant asks for the
+  password.
+- Only a rejected token now asks for the password. WAF and rate limit responses wait.
+- A command now shows in Home Assistant as soon as Toshiba accepts it.
 - An account can only be added once.
 - A self cleaning unit now shows as off, as it does in the Toshiba app.
 - In the 8 °C mode, model 3 units now accept up to 16 °C.

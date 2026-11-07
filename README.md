@@ -78,10 +78,9 @@ Go to **Settings → Devices & services → Add integration** and search for **T
 
 Each account can be added once. There are no other options.
 
-> [!IMPORTANT]
-> Toshiba allows **one active connection per account**. If another Home Assistant, or another Toshiba integration, uses the same account, connections get refused, with an error that looks like a wrong password. See [Troubleshooting](#troubleshooting).
+Your password is used for one login and is not stored. Toshiba's token lasts about two years. When it stops working, for example after you change the password, Home Assistant asks for the password under **Settings → Devices & services**.
 
-When the password stops working, Home Assistant asks for the new one under **Settings → Devices & services**.
+The Toshiba app can stay in use at the same time.
 
 ## Entities
 
@@ -108,17 +107,24 @@ Outside the 8 °C mode, the target temperature goes from 17 to 30 °C. Except fo
 
 | Data | How | When |
 |---|---|---|
-| State of the unit | Pushed by the Toshiba cloud | When it changes |
-| State of the unit, full refresh | Fetched by the library | Every 30 minutes |
-| Energy consumption | Fetched by the library | Every hour |
+| State of the unit | Pushed by the Toshiba cloud | When it changes. It can take a minute or two to arrive |
+| State of all units, full refresh | One request | Every 30 minutes, and after a reconnection |
+| Energy consumption | One request | Every hour |
 
-A stored access token avoids a new login at each restart, because Toshiba limits logins strictly. If the connection is lost and does not come back within 30 seconds, the integration reloads by itself.
+## Protecting your account
+
+Toshiba limits requests and locks accounts after failed logins, without saying where the limits are. This integration is built around that, although nothing can guarantee that Toshiba never blocks an account:
+
+- It logs in only when you send a form, so a restart can never repeat a login.
+- A restart reuses the recent answers, and a loop of restarts costs what one start costs.
+- If Toshiba asks to slow down, all requests stop for at least 15 minutes, even across restarts.
+- It stays below 120 requests per hour, and the form stops after 3 failed logins in an hour.
 
 ## Actions
 
 | Action | Description |
 |---|---|
-| `toshiba_ac_link.reconnect` | Makes a new connection to the Toshiba cloud for all entries. Use it after closing another connection to the same account, or to pick up a new unit |
+| `toshiba_ac_link.reconnect` | Makes a new connection to the Toshiba cloud for all entries. Use it to pick up a new unit, up to 15 minutes after adding it to the account |
 
 All other control goes through the standard actions of the entities, such as `climate.set_temperature`.
 
@@ -172,22 +178,22 @@ If your unit works with the [Toshiba Home AC Control](https://play.google.com/st
 ## Known limitations
 
 - **It needs the cloud.** No internet or a Toshiba outage means no control. There is no local mode.
-- **One connection per account.** A second client takes the connection away from the first.
-- **Toshiba limits requests.** Restarting Home Assistant repeatedly makes login problems worse.
+- **Changes can arrive late.** Toshiba's channel delivered changes made in the app a minute or two late in our measurements. A command from Home Assistant shows at once.
+- **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
 - **New units need a reconnect.** A unit you add to the account appears after the `reconnect` action or a restart.
 - **Removed units stay.** Delete a unit that you removed from the account by hand.
 - **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
 
 ## Troubleshooting
 
-**"Toshiba refused the cloud connection", or "Credentials invalid".**
-Your password is probably fine. Another client holds the single connection of the account: another Home Assistant, another Toshiba integration, or the app. Close it, then call `toshiba_ac_link.reconnect`.
+**Setup keeps retrying after a restart.**
+The Toshiba cloud may be unavailable, or may have asked to slow down, and then the integration waits by itself for 15 minutes or more. Restarting does not shorten this. Check that the app works in the meantime. **Download diagnostics** shows how long the wait is, under `blocked_for_s`.
 
-**Setup fails after a restart.**
-The Toshiba cloud may be unavailable, or may be limiting requests. Home Assistant keeps retrying by itself, so do not restart it again: wait an hour or two. Check that the app works in the meantime.
+**The form says "Too many attempts".**
+Wait for an hour. This protects your account, because Toshiba counts failed logins toward a lockout.
 
 **The form says "Invalid username or password".**
-Check that you can log in to the app. Some users report problems with long passwords or special characters. Avoid repeated attempts, because Toshiba counts failed logins toward an account lockout.
+Check that you can log in to the app. Some users report problems with long passwords or special characters. The form allows 3 failed attempts per hour.
 
 **Entities are unavailable just after setup.**
 An outdoor temperature or a switch can stay unavailable while the unit is off, because it sends nothing. This is normal.
@@ -202,10 +208,9 @@ logger:
   default: warning
   logs:
     custom_components.toshiba_ac_link: debug
-    toshiba_ac_community: debug
 ```
 
-Then [open an issue](https://github.com/anto294/homeassistant-toshiba-ac/issues), with the file from **Download diagnostics** in the menu of the entry. That file does not contain your account, password or tokens, but debug logs can, so check them before you share them. Problems in how the unit or the cloud behaves may belong to [the protocol library](https://github.com/vmvelev/Toshiba-AC-control/issues).
+Then [open an issue](https://github.com/anto294/homeassistant-toshiba-ac/issues), with the file from **Download diagnostics** in the menu of the entry. That file does not contain your account, password or tokens, but debug logs can, so check them before you share them.
 
 ## Removal
 
@@ -221,10 +226,10 @@ The integration is available in English, German, Dutch and Italian. To add a lan
 
 ## Migrating from another Toshiba integration
 
-Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshiba_ac_community` and does not take over their entries. Because of the single connection, do not run them on the same account at once:
+Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshiba_ac_community` and does not take over their entries. Do not run them on the same account at once, because they add requests and logins that this integration cannot limit:
 
 1. Note the entity IDs that your automations and dashboards use.
-2. Delete the entry of the old integration, so that its connection closes, and uninstall it.
+2. Delete the entry of the old integration, and uninstall it.
 3. Install Toshiba Link and add your account.
 4. Check your automations and dashboards. Entity IDs are built from the name of each unit, so most stay the same, except these:
    - The energy sensor is now called `..._energy_consumption`. On the original integration it was `..._power_consumption`.
@@ -235,9 +240,9 @@ Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshib
 | | Toshiba Link | [h4de5](https://github.com/h4de5/home-assistant-toshiba_ac) | [vmvelev](https://github.com/vmvelev/home-assistant-toshiba_ac) |
 |---|---|---|---|
 | Domain | `toshiba_ac_link` | `toshiba_ac` | `toshiba_ac_community` |
-| Protocol library | `toshiba-ac-community` | `toshiba-ac` | `toshiba-ac-community` |
-| Reauthentication, stored access token, reload after a lost connection | Yes | No | Yes |
-| Notice about the single connection | Yes | Yes | No |
+| Connection to Toshiba | Own client, on the channel of the current app (Azure Web PubSub) | `toshiba-ac` library, on IoT Hub | `toshiba-ac-community` library, on IoT Hub |
+| Limits that survive restarts, no stored password | Yes | No | No |
+| Reauthentication | Yes | No | Yes |
 | Indoor temperature, self cleaning, wireless LED, horizontal swing | Yes | No | Yes |
 | Tests on a real Home Assistant, in CI | Yes | No | No |
 | Minimum Home Assistant | 2026.11.0 | 2025.3.0 | 2025.3.0 |
@@ -255,13 +260,13 @@ Home Assistant grades the integrations in its core with the [Integration Quality
 |---|---:|---:|---:|---:|
 | Bronze | 20 | 17 | 3 | 0 |
 | Silver | 10 | 8 | 1 | 1 |
-| Gold | 21 | 13 | 2 | 6 |
-| Platinum | 3 | 2 | 0 | 1 |
+| Gold | 21 | 13 | 3 | 5 |
+| Platinum | 3 | 3 | 0 | 0 |
 
 A tier needs every rule of that tier and the ones below it, so this project meets Bronze, and does not claim the others yet.
 
 ## Credits and license
 
-This project started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), created by h4de5 and its contributors, and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac) by Venelin Velev. The communication with the cloud is done by [toshiba-ac-community](https://github.com/vmvelev/Toshiba-AC-control), a fork of [KaSroka/Toshiba-AC-control](https://github.com/KaSroka/Toshiba-AC-control). Thanks to all of them.
+This project started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), created by h4de5 and its contributors, and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac) by Venelin Velev. The decoding of the state of a unit comes from [toshiba-ac-community](https://github.com/vmvelev/Toshiba-AC-control), a fork of [KaSroka/Toshiba-AC-control](https://github.com/KaSroka/Toshiba-AC-control), under Apache-2.0. Thanks to all of them.
 
 Distributed under the [GNU General Public License v3.0](LICENSE), like the projects it comes from.

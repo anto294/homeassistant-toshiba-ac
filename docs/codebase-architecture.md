@@ -17,34 +17,61 @@ supports. A device without energy monitoring gets no energy sensor.
 
 ## Transports
 
-The integration uses two independent transports against Toshiba's cloud:
-
 | Transport | Purpose | Direction |
 |-----------|---------|-----------|
-| HTTPS REST | Authentication, device list, full device state | Request/response |
-| Azure IoT Hub (AMQP) | Live push updates, command delivery | Bidirectional |
+| HTTPS | Login, list of units, socket address, commands, energy | Request and response |
+| Azure Web PubSub, over one WebSocket | What the units publish | Push |
 
-REST is the source of truth at startup. AMQP takes over once connected and
-pushes state changes. REST polling re-syncs periodically.
+The list of units gives the full state at the start, and every 30 minutes as a safety
+net. The socket brings changes in between.
 
 ```mermaid
 flowchart LR
     UI["Home Assistant UI"] --> E["Entities"]
-    E --> DM["DeviceManager"]
-    DM -->|"HTTPS REST"| API["mobileapi<br/>toshibahomeaccontrols.com"]
-    DM -->|"AMQP"| IOTHUB["Azure IoT Hub"]
-    IOTHUB --> AC["AC unit"]
-    API --> AC
+    E --> D["ToshibaAcDevice"]
+    D --> M["ToshibaAcDeviceManager"]
+    M --> A["ToshibaApi"]
+    A --> G["ToshibaGuard, on disk"]
+    A -->|"HTTPS"| API["mobileapi<br/>toshibahomeaccontrols.com"]
+    M --> R["ToshibaRealtime"]
+    R -->|"WebSocket"| WPS["Azure Web PubSub"]
+    API --> AC["AC unit"]
+    AC --> WPS
 ```
+
+## Realtime messages
+
+Each frame is a Web PubSub message from the group of one unit, with this in `data`:
+
+| Field | Meaning |
+|-------|---------|
+| `sourceId` | The `DeviceUniqueId` of the unit |
+| `cmd` | `CMD_FCU_FROM_AC` for a state, `CMD_HEARTBEAT` for temperatures |
+| `messageId` | A counter of the unit, or `MB_...` when it repeats a client's command |
+| `payload` | `{"data": "<hex state>"}`, or one hex byte per heartbeat value |
+
+A state is either full, or partial with `ff` in the fields that did not change, so it is
+always merged. Measured on two accounts:
+
+- A socket stayed open and kept receiving after its 15-minute token expired. The token
+  only opens the connection. Longer than 20 minutes is untested, and the client simply
+  reconnects if the server closes.
+- Heartbeats are irregular: 6 in 20 minutes across 5 units. They say nothing about
+  availability, so a ping checks the socket instead.
+- A change made in the app arrived about 90 to 100 seconds after the time in its own
+  message. So a command updates the state as soon as Toshiba accepts it, and a slow answer
+  from the unit must never lead to a repeat.
+- The app and another client can be connected to one account at the same time.
+- The timestamps of a unit's own messages are about an hour ahead, and off by tens of
+  seconds per unit. Do not use them.
 
 ## Component files
 
 | File | Role |
 |------|------|
 | `__init__.py` | Config entry setup, error classification, the reconnect action |
-| `reconnect.py` | Reload after a connection that does not come back |
-| `config_flow.py` | Credential entry, validation and reauthentication |
-| `const.py` | Domain and shared timeouts |
+| `config_flow.py` | The forms, the only place that logs in |
+| `const.py` | Domain |
 | `climate.py` | Climate entity |
 | `binary_sensor.py` | Binary sensor entities |
 | `sensor.py` | Sensor entities |
@@ -54,66 +81,36 @@ flowchart LR
 | `entity_description.py` | Shared helpers of the enum descriptions |
 | `feature_list.py` | Enum name helpers |
 | `diagnostics.py` | Troubleshooting download |
+| `toshiba/guard.py` | Limits and reusable answers, on disk |
+| `toshiba/api.py` | One HTTPS request per call |
+| `toshiba/realtime.py` | The socket, with its reconnection |
+| `toshiba/manager.py` | The account: units, channel, periodic requests |
+| `toshiba/device.py` | One unit, the interface that entities use |
+| `toshiba/fcu_state.py`, `features.py`, `properties.py` | Decoding of the state and the features, from `toshiba-ac-community` under Apache-2.0 (see `toshiba/NOTICE`) |
 
-All cloud communication lives in the external `toshiba-ac-community` library, not
-in this repository. See [`authentication.md`](authentication.md) for the token and
-credential flow.
-
-## One connection per account
-
-The cloud allows exactly **one** active command connection per Toshiba account.
-A second client — another Home Assistant instance, or the Toshiba app — takes the
-slot and the loser is refused by the message broker. The refusal arrives as
-`Credentials invalid, could not connect`, which reads like a wrong password but
-is not one.
-
-The integration therefore translates that error into a message that names the
-real cause, and raises a persistent notification while it lasts. Rejected
-connection behaviour:
-
-| Situation | What the user sees |
-|-----------|-------------------|
-| A command is sent over a refused connection | Service call fails with a message naming the second instance and pointing at `toshiba_ac_link.reconnect` |
-| Setup registers a fresh SAS token and the broker still refuses | The same message, plus a persistent notification |
-| Setup succeeds again | The notification is dismissed |
-
-Two instances on one account cannot be prevented from the integration — the
-limitation is in the cloud service. It can only be made visible, so a second
-Home Assistant on the same account needs its own Toshiba account.
+See [`authentication.md`](authentication.md) for the requests and for what protects the
+account.
 
 ## Entity availability
 
-Availability is not a property of the cloud connection alone. Two things decide
-whether an entity carries a value:
+An entity is available while the socket is open. Commands use HTTPS and do not depend on
+it, but without the socket the state could be out of date. It also depends on the unit:
 
-* **Power state of the unit.** Outdoor temperature, indoor temperature and all
-  mode switches are filled from the state the unit pushes on its own. An air
-  conditioner that is switched off sends nothing, so those entities stay
-  unavailable until it is switched on. Only the climate entity itself is
-  populated right after setup, because that part comes from the registration
-  response.
-* **Model capabilities.** Whether fireplace mode, 8 °C heating, eco, high
-  power and similar features exist at all depends on the unit. A unit without
-  the hardware never reports them, and the corresponding entities are not
-  created.
-
-This means an entity being unavailable shortly after setup is expected and not a
-sign of a broken connection.
+* **Model capabilities.** Whether fireplace mode, 8 °C heating and similar functions
+  exist at all depends on the unit, so entities for what it lacks are not created.
+* **Mode.** Some switches and selects are unavailable when they do not apply, such as
+  while the unit is off.
 
 ## Error handling
 
-Setup failures are reported to Home Assistant so it can act on them:
-
 | Condition | Result |
 |-----------|--------|
-| Network error, timeout, rate limit, cloud unavailable | Setup retry with exponential backoff |
-| Login rejected | Reauthentication flow, see [`authentication.md`](authentication.md#setup-failures) |
-| Connection lost after setup | Entry reload after 30 seconds, unless the client recovers first |
-
-`connect()` is bounded by a 30-second timeout, so a hanging Azure IoT Hub
-connection cannot block Home Assistant startup.
+| Network error, timeout, server error | Setup retry with a growing wait |
+| Blocked by Toshiba, or over the request budget | Setup retry after the remaining wait |
+| Token rejected or expired | Reauthentication, see [`authentication.md`](authentication.md#setup-failures) |
+| Socket lost | Entities unavailable, reconnection by itself with growing waits |
 
 ## Reporting problems
 
 Include the diagnostics download from the integration page. It contains the
-device state, with the account and credentials redacted.
+device state and the request counters, with the account and credentials redacted.
