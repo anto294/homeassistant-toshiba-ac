@@ -46,11 +46,6 @@ CONNECTION_REFUSED_ERROR = (
     f"Toshiba refused the cloud connection: {{err}}. {ONE_CONNECTION_HINT}"
 )
 
-CONNECTION_DROPPED_ERROR = (
-    "The connection to the Toshiba cloud dropped while sending a command. "
-    f"{ONE_CONNECTION_HINT}"
-)
-
 NOTIFICATION_ID = "toshiba_ac_link_connection_refused"
 
 

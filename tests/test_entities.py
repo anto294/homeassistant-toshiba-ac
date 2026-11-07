@@ -8,8 +8,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 import pytest
 from toshiba_ac_community.device.properties import (
+    ToshibaAcAirPureIon,
     ToshibaAcHorizontalSwingMode,
     ToshibaAcMeritA,
+    ToshibaAcMeritB,
+    ToshibaAcMode,
     ToshibaAcSelfCleaning,
     ToshibaAcStatus,
     ToshibaAcSwingMode,
@@ -213,3 +216,72 @@ async def test_horizontal_swing_only_on_independent_units() -> None:
     device.set_ac_horizontal_swing_mode.assert_awaited_once_with(
         ToshibaAcHorizontalSwingMode.SWING
     )
+
+
+def test_commands_reach_the_unit(run_in_hass) -> None:
+    """Switches, selects and the climate entity call the right setter."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        device = make_device()
+        await async_add_entry(hass, make_manager([device]))
+
+        await hass.services.async_call(
+            "switch",
+            "turn_on",
+            {"entity_id": "switch.living_room_eco_mode"},
+            blocking=True,
+        )
+        device.set_ac_merit_a.assert_awaited_once_with(ToshibaAcMeritA.ECO)
+
+        await hass.services.async_call(
+            "switch",
+            "turn_on",
+            {"entity_id": "switch.living_room_air_purifier"},
+            blocking=True,
+        )
+        device.set_ac_air_pure_ion.assert_awaited_once_with(ToshibaAcAirPureIon.ON)
+
+        await hass.services.async_call(
+            "select",
+            "select_option",
+            {"entity_id": "select.living_room_fireplace_mode", "option": "fireplace_1"},
+            blocking=True,
+        )
+        device.set_ac_merit_b.assert_awaited_once_with(ToshibaAcMeritB.FIREPLACE_1)
+
+        await hass.services.async_call(
+            "climate",
+            "set_hvac_mode",
+            {"entity_id": "climate.living_room", "hvac_mode": "cool"},
+            blocking=True,
+        )
+        device.set_ac_mode.assert_awaited_once_with(ToshibaAcMode.COOL)
+
+        await hass.services.async_call(
+            "climate",
+            "set_temperature",
+            {"entity_id": "climate.living_room", "temperature": 23},
+            blocking=True,
+        )
+        device.set_ac_temperature.assert_awaited_once_with(23)
+
+    run_in_hass(scenario)
+
+
+def test_pushed_state_reaches_the_entities(run_in_hass) -> None:
+    """A state pushed by the unit updates the entities without polling."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        device = make_device()
+        callbacks = []
+        device.on_state_changed_callback.add = callbacks.append
+        await async_add_entry(hass, make_manager([device]))
+
+        device.ac_temperature = 25
+        for callback in callbacks:
+            callback(device)
+        await hass.async_block_till_done()
+
+        assert hass.states.get("climate.living_room").attributes["temperature"] == 25
+
+    run_in_hass(scenario)
