@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-from homeassistant.config_entries import ConfigEntryState
+from homeassistant.config_entries import ConfigEntryDisabler, ConfigEntryState
 from homeassistant.core import CoreState, HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 import pytest
 
 from custom_components.toshiba_ac_link.const import DOMAIN
@@ -102,6 +103,57 @@ def test_reconnect_action_reloads_the_entry(run_in_hass) -> None:
 
         created.assert_called_once()
         assert entry.state is ConfigEntryState.LOADED
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ToshibaAuthError("rejected"),
+        ToshibaBlockedError("slow down", 100),
+        ToshibaConnectionError("HTTP 500"),
+    ],
+)
+def test_reconnect_action_reports_an_entry_that_did_not_load(
+    run_in_hass, error
+) -> None:
+    """An automation must learn that the action did not reconnect."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        entry = await async_add_entry(hass, make_manager())
+
+        failing = make_manager()
+        failing.connect = AsyncMock(side_effect=error)
+        with (
+            patch(MANAGER, return_value=failing),
+            pytest.raises(HomeAssistantError, match="1 of 1") as raised,
+        ):
+            await hass.services.async_call(DOMAIN, "reconnect", blocking=True)
+        await hass.async_block_till_done()
+
+        assert entry.state is not ConfigEntryState.LOADED
+        assert "user@example.com" not in str(raised.value)
+
+    run_in_hass(scenario)
+
+
+def test_reconnect_action_leaves_out_a_disabled_entry(run_in_hass) -> None:
+    """The user turned it off, so its not loading is no failure."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        manager = make_manager()
+        with patch(MANAGER, return_value=manager) as created:
+            entry = await async_add_entry(hass, manager)
+            await hass.config_entries.async_set_disabled_by(
+                entry.entry_id, ConfigEntryDisabler.USER
+            )
+            created.reset_mock()
+
+            await hass.services.async_call(DOMAIN, "reconnect", blocking=True)
+
+        created.assert_not_called()
+        assert entry.state is ConfigEntryState.NOT_LOADED
 
     run_in_hass(scenario)
 

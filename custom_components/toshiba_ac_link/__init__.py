@@ -6,7 +6,11 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -34,10 +38,19 @@ async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
     """Register the actions, which exist even when no entry is loaded."""
 
     async def handle_reconnect(_call: ServiceCall) -> None:
-        """Reload all entries, which makes new connections."""
+        """Reload all entries, which makes new connections, and report any that failed."""
         _LOGGER.info("Reconnect action called, reloading all entries")
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            await hass.config_entries.async_reload(entry.entry_id)
+        entries = hass.config_entries.async_entries(
+            DOMAIN, include_disabled=False, include_ignore=False
+        )
+        results = [
+            await hass.config_entries.async_reload(entry.entry_id) for entry in entries
+        ]
+        if failed := results.count(False):
+            raise HomeAssistantError(
+                f"{failed} of {len(entries)} Toshiba entries did not load. "
+                "The integration page shows what they need, and most retry by themselves"
+            )
 
     hass.services.async_register(DOMAIN, "reconnect", handle_reconnect)
     return True
