@@ -5,5 +5,6 @@ the Apache License 2.0 in the LICENSE file next to this one.
 
 Changes: their imports point at this package, pretty_enum_name moved to
 properties.py from the library's utils module, and the files are formatted with
-black. device.py is based on the library's device/__init__.py, with its transport
+black. In features.py, for_ac_mode accepts a mode that is not in its tables, such as
+the NONE that an unknown mode byte decodes to. device.py is based on the library's device/__init__.py, with its transport
 replaced.

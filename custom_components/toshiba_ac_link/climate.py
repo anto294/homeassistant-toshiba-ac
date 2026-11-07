@@ -211,7 +211,8 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         if not self.is_on:
             return HVACMode.OFF
 
-        return TOSHIBA_TO_HVAC_MODE[self._device.ac_mode]
+        # An unknown mode byte decodes to NONE, which shows as unknown
+        return TOSHIBA_TO_HVAC_MODE.get(self._device.ac_mode)
 
     @property
     def hvac_modes(self) -> list[HVACMode]:

@@ -226,15 +226,16 @@ class ToshibaAcFeatures:
         )
 
     def for_ac_mode(self, ac_mode: ToshibaAcMode) -> ToshibaAcFeatures:
+        # An unknown mode byte decodes to NONE, which disables nothing
         filtered_ac_merit_b = [
             merit_b
             for merit_b in self.ac_merit_b
-            if merit_b not in self.DISABLED_AC_MERIT_B_FOR_MODE[ac_mode]
+            if merit_b not in self.DISABLED_AC_MERIT_B_FOR_MODE.get(ac_mode, [])
         ]
         filtered_ac_merit_a = [
             merit_a
             for merit_a in self.ac_merit_a
-            if merit_a not in self.DISABLED_AC_MERIT_A_FOR_MODE[ac_mode]
+            if merit_a not in self.DISABLED_AC_MERIT_A_FOR_MODE.get(ac_mode, [])
         ]
 
         return ToshibaAcFeatures(

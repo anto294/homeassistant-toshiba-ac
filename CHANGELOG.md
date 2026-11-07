@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+- A mode byte the integration does not know no longer removes the selects of all units at
+  startup, or freezes the entities and fails commands when a unit pushes it. The climate
+  entity shows unknown until a known mode arrives.
+
 ## [0.1.0b2] - 2026-11-07
 
 ### Fixed
