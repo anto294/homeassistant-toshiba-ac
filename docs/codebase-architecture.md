@@ -1,15 +1,16 @@
 # Architecture
 
-How the Toshiba AC integration talks to Toshiba.
+How the Toshiba Link integration talks to Toshiba.
 
 ## Entity platforms
 
 | Platform | Entities |
 |----------|----------|
-| `climate` | Thermostat: HVAC mode, temperature, fan mode, swing |
-| `select` | Merit features, fan speed, swing mode |
+| `climate` | Thermostat: HVAC mode, temperature, fan mode, swing, power preset |
+| `binary_sensor` | Self cleaning |
+| `select` | Outdoor unit silent mode, fireplace mode |
 | `sensor` | Indoor temperature, outdoor temperature, energy consumption |
-| `switch` | Self-cleaning, indoor display |
+| `switch` | 8 °C mode, air purifier, ECO mode, high power mode, wireless LED |
 
 Entities are created per device and only for features the model actually
 supports. A device without energy monitoring gets no energy sensor.
@@ -40,19 +41,22 @@ flowchart LR
 
 | File | Role |
 |------|------|
-| `__init__.py` | Config entry setup, platform registration |
-| `config_flow.py` | Credential entry and validation |
-| `const.py` | State, mode and feature mappings |
+| `__init__.py` | Config entry setup, error classification, the reconnect action |
+| `reconnect.py` | Reload after a connection that does not come back |
+| `config_flow.py` | Credential entry, validation and reauthentication |
+| `const.py` | Domain and shared timeouts |
 | `climate.py` | Climate entity |
+| `binary_sensor.py` | Binary sensor entities |
 | `sensor.py` | Sensor entities |
 | `select.py` | Select entities |
 | `switch.py` | Switch entities |
 | `entity.py` | Shared base entity |
-| `feature_list.py` | Per-model capability definitions |
+| `entity_description.py` | Shared helpers of the enum descriptions |
+| `feature_list.py` | Enum name helpers |
 | `diagnostics.py` | Troubleshooting download |
 
-All cloud communication lives in the external `toshiba-ac` library, not in this
-repository. See [`authentication.md`](authentication.md) for the token and
+All cloud communication lives in the external `toshiba-ac-community` library, not
+in this repository. See [`authentication.md`](authentication.md) for the token and
 credential flow.
 
 ## One connection per account
@@ -91,7 +95,7 @@ whether an entity carries a value:
 * **Model capabilities.** Whether fireplace mode, 8 °C heating, eco, high
   power and similar features exist at all depends on the unit. A unit without
   the hardware never reports them, and the corresponding entities are not
-  created. See `feature_list.py` for the per-model definitions.
+  created.
 
 This means an entity being unavailable shortly after setup is expected and not a
 sign of a broken connection.
@@ -102,8 +106,9 @@ Setup failures are reported to Home Assistant so it can act on them:
 
 | Condition | Result |
 |-----------|--------|
-| Network error, timeout, cloud unavailable | Setup retry with exponential backoff |
-| Error message containing `401`, `403` or `auth` | Reauth error, but no reauth step exists — see [`authentication.md`](authentication.md#three-setup-phases-three-different-failure-behaviours) |
+| Network error, timeout, rate limit, cloud unavailable | Setup retry with exponential backoff |
+| Login rejected | Reauthentication flow, see [`authentication.md`](authentication.md#setup-failures) |
+| Connection lost after setup | Entry reload after 30 seconds, unless the client recovers first |
 
 `connect()` is bounded by a 30-second timeout, so a hanging Azure IoT Hub
 connection cannot block Home Assistant startup.
@@ -111,4 +116,4 @@ connection cannot block Home Assistant startup.
 ## Reporting problems
 
 Include the diagnostics download from the integration page. It contains the
-configured entities and device state with credentials redacted.
+device state, with the account and credentials redacted.

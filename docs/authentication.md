@@ -43,9 +43,9 @@ through the IoT Hub link.
 
 ## Bootstrap sequence
 
-The first three requests are part of config entry setup. The last three happen
-afterwards, when the entity platforms are set up. That split matters for error
-handling, see [below](#three-setup-phases-three-different-failure-behaviours).
+These requests are part of config entry setup. That matters for error handling,
+see [below](#setup-failures). The login only happens when no access token is
+stored, or when Toshiba rejects the stored one with a 401.
 
 The connection steps are bounded by a 30-second timeout, so a hanging IoT Hub
 connection cannot block Home Assistant startup.
@@ -60,8 +60,10 @@ sequenceDiagram
 
     rect rgb(238, 242, 255)
     Note over HA,HUB: Config entry setup
+    opt no stored access token, or a 401
     HA->>REST: POST /api/Consumer/Login<br/>{Username, Password}<br/>Content-Type: application/json
     REST-->>HA: 200 {access_token, token_type, consumerId}
+    end
 
     Note over HA,REST: access_token is now valid.<br/>It is NOT valid for the IoT Hub.
 
@@ -72,10 +74,7 @@ sequenceDiagram
 
     HA->>HUB: amqps connect<br/>IoTHubDeviceClient.create_from_sastoken(SasToken)
     HUB-->>HA: connected
-    end
 
-    rect rgb(240, 255, 240)
-    Note over HA,REST: Entity platform setup
     HA->>REST: GET /api/AC/GetConsumerACMapping?consumerId=...<br/>Authorization: Bearer access_token
     REST-->>HA: 200 device list with ACStateData,<br/>FirmwareVersion, MeritFeature, ACModelId
 
@@ -110,17 +109,15 @@ sequenceDiagram
 
 | Endpoint | Method | Bearer token | Purpose | Called |
 |----------|--------|--------------|---------|--------|
-| `/api/Consumer/Login` | POST | no | Exchange credentials for access token, get `consumerId` | Once per setup |
-| `/api/Consumer/RegisterMobileDevice` | POST | yes | Register this Home Assistant instance, obtain SAS token | On first setup and on SAS renewal |
+| `/api/Consumer/Login` | POST | no | Exchange credentials for access token, get `consumerId` | When adding the entry, then only when the stored token is rejected |
+| `/api/Consumer/RegisterMobileDevice` | POST | yes | Register this Home Assistant instance, obtain SAS token | On every setup and on SAS renewal |
 | `/api/AC/GetConsumerACMapping` | GET | yes | List AC units and their capabilities | Once per setup |
 | `/api/AC/GetCurrentACState` | GET | yes | Full device state, plus CDU/FCU model names | Once per setup, then every 30 min |
-| `/api/AC/GetGroupACEnergyConsumption` | POST | yes | Energy totals per device | Every 10 min, only if supported |
+| `/api/AC/GetGroupACEnergyConsumption` | POST | yes | Energy totals per device | Every 60 min, only if supported |
 
-All HTTPS requests carry a browser `User-Agent`. This integration additionally
-patches the request session to send a `Device-ID` header, which Toshiba's web
-application firewall requires in order to distinguish installations. Without it
-the gateway answers `429 Too Many Requests` and the integration cannot set up at
-all.
+All HTTPS requests carry a `Device-ID` header, which Toshiba's web application
+firewall uses to tell installations apart. The library sets it, from the device id
+in the entry.
 
 ## Transport per feature
 
@@ -135,11 +132,13 @@ written over AMQP, only reads use HTTPS.**
 | Swing | `climate` (via `set_swing_mode`) | AMQP push | AMQP `set_ac_swing_mode` |
 | CDU silent, fireplace | `select` | AMQP push | AMQP via entity description (`ac_merit_a` / `ac_merit_b`) |
 | 8 degree heating, air purifier, eco mode, high power | `switch` | AMQP push | AMQP via entity description (`ac_merit_a` / `ac_merit_b` / `ac_air_pure_ion`) |
-| Outdoor temperature | `sensor` | AMQP push | — |
-| Power consumption | `sensor` | REST every 10 min | — |
+| Horizontal swing, on units with independent axes | `climate` | AMQP push | AMQP `set_ac_horizontal_swing_mode` |
+| Wireless LED | `switch` | AMQP push | AMQP `set_ac_wireless_led` |
+| Indoor and outdoor temperature, self cleaning | `sensor`, `binary_sensor` | AMQP push | — |
+| Energy consumption | `sensor` | REST every 60 min | — |
 
 Read the two columns together. Every entity reads its current value from an AMQP
-push, and only the power consumption sensor is refreshed over HTTPS. No setting
+push, and only the energy consumption sensor is refreshed over HTTPS. No setting
 is ever written over HTTPS — all writes go out as AMQP messages.
 
 Outbound commands are published as AMQP messages with the payload
@@ -158,71 +157,40 @@ Any other command name is ignored with an info-level log line.
 
 ## Token lifetime
 
-The SAS token carries its own expiry and stays valid until then. Before it runs
-out, the Azure client signals `on_new_sastoken_required`, which makes the
-integration call `RegisterMobileDevice` again and hand the fresh token back. No
-user interaction and no Home Assistant restart is involved.
+The SAS token carries its own expiry. Before it runs out, the Azure client signals
+`on_new_sastoken_required`, which makes the library call `RegisterMobileDevice`
+again and hand the new token back. No user interaction and no restart is involved.
 
-Toshiba issues SAS tokens with an expiry roughly a century out, so that proactive
-path never fires in practice. The integration therefore also has to recover from a
-token that IoT Hub no longer accepts, which is what the next section covers.
+The SAS token is not stored. It may have expired while Home Assistant was stopped,
+so every setup registers a new one.
 
-The SAS token is stored in the config entry. On setup the device manager is handed
-that token and **skips** `RegisterMobileDevice` entirely. Two things can invalidate
-it in between, and both are handled before anything is sent to IoT Hub:
+The access token, its type and the consumer id are stored in the config entry and
+passed to the library at setup, so a restart, a reload or the
+`toshiba_ac_link.reconnect` action skips `/api/Consumer/Login`, the most
+rate-limited endpoint. When Toshiba answers a stale token with a 401, the library
+logs in again once and the integration stores the new token.
 
-* the stored token is already expired, or expires within the renewal margin — the
-  token is dropped and a new one is registered
-* IoT Hub rejects the token during connect — the same happens, the integration
-  makes exactly one re-registration attempt before giving up
+## Setup failures
 
-Only token-specific errors trigger that second attempt. Network and cloud errors
-are retried by Home Assistant as before, because each attempt would otherwise mean
-another login against the rate-limited Toshiba API.
+Where a request fails decides how the failure is reported.
 
-The access token is not refreshed on a schedule. It is obtained once per
-bootstrap run and lives for the lifetime of the HTTP session. When the session
-is torn down and set up again — a Home Assistant restart, a reload, or the
-`toshiba_ac_link.reconnect` service — the whole bootstrap runs again and a fresh
-access token is fetched.
+**Adding the entry or reauthenticating.** The form shows the error. Failed logins
+are never retried by the library, because Toshiba counts them toward an account
+lockout.
 
-## Three setup phases, three different failure behaviours
+**Config entry setup.** Connecting and fetching the device list when Home Assistant
+starts or reloads the integration, each within 30 seconds. Only
+`ToshibaAcHttpApiAuthError` asks for the password. Searching the text of an error
+for `auth` or `403` is what made WAF responses look like a wrong password.
 
-Where a request fails decides how the failure is reported. The phases are not
-handled the same way, and the difference explains most confusing bug reports.
+| Failing step | Reported as |
+|--------------|-------------|
+| Login rejected, on the form | Form error "Invalid username or password" |
+| Anything else, on the form | Form error "Failed to connect" |
+| Login rejected, during setup | Reauthentication flow |
+| IoT Hub refuses the connection | Retry with backoff, plus a persistent notification about the single connection |
+| Rate limit, WAF, network, timeout, device list | Retry with backoff |
 
-**Phase 1 — config flow.** Validating credentials while the user is still on the
-setup form. The library raises a dedicated exception type when the login
-endpoint reports `InvalidUserNameorPassword`, and a different one for every other
-transport error. This phase has reliable auth detection: a wrong password shows
-"Invalid authentication" on the form.
-
-**Phase 2 — config entry setup.** Connecting when Home Assistant starts or
-reloads the integration. Token-specific errors first trigger one attempt to
-register a new SAS token; if that fails too, the error is classified by searching
-the message text for `401`, `403` or `auth`. A match raises a reauth error,
-everything else is retried with exponential backoff. The connect is wrapped in a
-30 second timeout, since the upstream AMQP connect has none.
-
-A refusal that survives a freshly registered SAS token is not a credential
-problem, and the integration says so instead of implying a wrong password. See
+A refusal on a SAS token that was issued seconds ago is not a credential problem,
+and the integration says so instead of implying a wrong password. See
 [`codebase-architecture.md`](codebase-architecture.md#one-connection-per-account).
-
-**Phase 3 — platform setup.** Fetching the device list and initial state. These
-requests happen *after* phase 2 succeeded and are **not** covered by the
-classification in phase 2.
-
-| Phase | Failing request | Reported as | Reauth offered |
-|-------|-----------------|-------------|----------------|
-| 1 | Login, wrong password | Form error "Invalid authentication" | n/a, still on the form |
-| 1 | IoT Hub connect fails | Form error "Cannot connect" | no |
-| 2 | Login or device registration fails | Retried with backoff | no |
-| 2 | Stored SAS token expired or rejected | One new registration attempt, then backoff | no |
-| 2 | Any error whose message contains `401`, `403` or `auth` | Reauth error | no (no reauth flow implemented) |
-| 3 | Device mapping returns `403` | Platform setup fails, entities unavailable | **no** |
-| 3 | Initial state read returns `403` | Platform setup fails, entities unavailable | **no** |
-
-The phase 3 rows are the important ones. A `403` on the device list or the state
-endpoint arrives after authentication has already succeeded, so the credential
-was accepted and re-authenticating cannot help. The integration does not treat
-these as auth errors at all.
