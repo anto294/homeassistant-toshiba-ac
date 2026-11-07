@@ -37,6 +37,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Every refused login now counts toward the limit of 3 failed logins per hour, not only
   those that name a wrong password.
 
+### Security
+
+- The diagnostics file no longer contains the names of the units, which can hold personal
+  details.
+
 ## [0.1.0b2] - 2026-11-07
 
 ### Fixed

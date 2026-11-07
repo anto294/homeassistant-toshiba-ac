@@ -48,7 +48,8 @@ async def async_get_config_entry_diagnostics(
         devices_data = []
         for device in devices:
             device_info = {
-                "name": device.name,
+                # A unit's name can say who lives where
+                "name": "**REDACTED**",
                 "ac_id": "**REDACTED**",
                 "ac_unique_id": "**REDACTED**",
                 "device_id": "**REDACTED**",

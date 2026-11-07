@@ -144,7 +144,7 @@ These limits are saved on disk before each request, so restarting does not reset
 - **The token and your username** are stored in Home Assistant's configuration, like those of other integrations. Whoever can read your configuration folder or backups can use the token, so treat them as sensitive. Whether changing your Toshiba password cancels a token has not been tested.
 - **Limits and the last list of units** are in a private file under `.storage/`.
 - **Everything goes only to Toshiba and its Azure service.** This project collects nothing.
-- **Diagnostics** leave out your account, tokens and unit IDs, so you can attach them to an issue.
+- **Diagnostics** leave out your account, tokens, and the IDs and names of your units, so you can attach them to an issue.
 
 ## Actions
 

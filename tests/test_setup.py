@@ -115,7 +115,13 @@ def test_diagnostics_hide_secrets(run_in_hass) -> None:
         result = await async_get_config_entry_diagnostics(hass, entry)
 
         text = str(result)
-        for secret in ("secret", "user@example.com", "access-token", "consumer-1"):
+        for secret in (
+            "secret",
+            "user@example.com",
+            "access-token",
+            "consumer-1",
+            "Living room",
+        ):
             assert secret not in text
         assert result["device_count"] == 1
         assert result["devices"][0]["ac_model_id"] == "2"
