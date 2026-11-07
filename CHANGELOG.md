@@ -7,6 +7,13 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+- Choosing off on the outdoor unit silent mode or the fireplace mode no longer ends
+  another function. These selects show off while ECO, high power or the 8 °C mode is
+  active, and choosing off used to clear that function, which for the 8 °C mode also sent
+  a target of 20 °C. It now sends no command unless the select's own function is active.
+
 ## [0.1.0b4] - 2026-11-07
 
 ### Fixed

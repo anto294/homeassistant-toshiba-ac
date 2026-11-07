@@ -557,3 +557,85 @@ def test_only_a_device_that_left_the_account_can_be_deleted(run_in_hass) -> None
             assert await can_remove(hass, entry, gone) is False
 
     run_in_hass(scenario)
+
+
+SILENT = "select.living_room_outdoor_unit_silent_mode"
+FIREPLACE = "select.living_room_fireplace_mode"
+
+
+def heating_with_merits(merits: str) -> str:
+    """Return a unit heating, with this byte for merit B and merit A."""
+    return f"304312413164{merits}10171bfe0b00001002000000"
+
+
+@pytest.mark.parametrize(
+    ("merits", "select"),
+    [
+        ("03", SILENT),  # ECO
+        ("01", SILENT),  # High power
+        ("04", SILENT),  # 8 °C
+        ("00", SILENT),
+        ("00", FIREPLACE),
+        ("f0", FIREPLACE),  # The unit reports no fireplace value
+        ("01", FIREPLACE),  # Merit B is off, and only merit A is set
+    ],
+)
+def test_choosing_off_keeps_what_the_select_does_not_control(
+    run_in_hass, merits, select
+) -> None:
+    """A select shows off for other values of its field, and off would clear them."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = heating_with_merits(merits)
+            entry = await add_real_entry(hass)
+            unit = await the_unit(entry)
+            before = unit.fcu_state.encode()
+            assert hass.states.get(select).state == "off"
+
+            await hass.services.async_call(
+                "select",
+                "select_option",
+                {"entity_id": select, "option": "off"},
+                blocking=True,
+            )
+
+            assert fake.requests["command"] == 0
+            assert unit.fcu_state.encode() == before
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    ("merits", "select", "option", "frame"),
+    [
+        ("02", SILENT, "off", "fffffffffffff0ff"),
+        ("0a", SILENT, "off", "fffffffffffff0ff"),
+        ("20", FIREPLACE, "off", "ffffffffffff0fff"),
+        ("30", FIREPLACE, "off", "ffffffffffff0fff"),
+        ("03", SILENT, "cdu_silent_1", "fffffffffffff2ff"),
+    ],
+)
+def test_a_select_still_changes_what_it_controls(
+    run_in_hass, merits, select, option, frame
+) -> None:
+    """Off ends its own values, and another option is an explicit replacement."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = heating_with_merits(merits)
+            entry = await add_real_entry(hass)
+
+            await hass.services.async_call(
+                "select",
+                "select_option",
+                {"entity_id": select, "option": option},
+                blocking=True,
+            )
+
+            assert [c["payload"]["data"][:16] for c in fake.commands] == [frame]
+            assert hass.states.get(select).state == option
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

@@ -81,9 +81,19 @@ class ToshibaAcEnumSelectDescription(
     async def async_select_option_name(
         self, device: ToshibaAcDevice, name: str
     ) -> None:
-        """Select a given option."""
+        """Select a given option.
+
+        A select shows off for values that are not its own, such as ECO on silent mode,
+        since they share a field. Off then has nothing to end, and sending it would
+        clear the other function, so it sends nothing.
+        """
+        current = self.get_device_attr(device)
         for value in self.values:
             if value.name.lower() == name:
+                if value == self.off_value and (
+                    current not in self.values or current == self.off_value
+                ):
+                    return
                 await self.async_set_attr(device, value)
                 return
 
