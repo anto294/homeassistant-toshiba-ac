@@ -55,7 +55,7 @@ sequenceDiagram
 | Endpoint | Method | When |
 |----------|--------|------|
 | `/api/Consumer/Login` | POST | When the user sends a form, and never otherwise |
-| `/api/AC/GetConsumerACMapping` | GET | At a start without a recent list, 5 minutes after a start that reused one, about every 30 minutes, and 5 minutes after a reconnection |
+| `/api/AC/GetConsumerACMapping` | GET | At a start without a recent list, 5 minutes after a start that reused one, about every 30 minutes, 5 minutes after a reconnection, and 2 minutes after a command with no echo |
 | `/api/RealTime/GetWebPubSubToken` | POST | Each time the socket opens, since an address works for one connection |
 | `/api/IoTHub/SendCommand` | POST | Once per command |
 | `/api/AC/GetGroupACEnergyConsumption` | POST | At most hourly, only if a unit reports energy |

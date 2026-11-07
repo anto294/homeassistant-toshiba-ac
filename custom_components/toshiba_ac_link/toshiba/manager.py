@@ -42,6 +42,10 @@ ENERGY_S = 60 * 60
 
 FIRST_CONNECTION_WAIT_S = 10
 
+# Toshiba can accept a command that the unit never applies. An echo normally arrives
+# within a second, but changes from the app were seen to take 100 seconds
+ECHO_WAIT_S = 2 * 60
+
 # What decoding the data of a unit can raise, when the cloud sends something unexpected
 _BAD_DATA_ERRORS = (ValueError, TypeError, IndexError, struct.error)
 
@@ -85,6 +89,9 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         self._refresh_now = asyncio.Event()
         self._message_count = 0
         self._message_counter = 0
+        self._awaited_echoes: set[str] = set()
+        self._echo_timer: asyncio.TimerHandle | None = None
+        self._refresh_at_once = False
 
     # Start and stop
 
@@ -113,6 +120,8 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
 
     async def shutdown(self) -> None:
         """Stop everything, which also closes the socket."""
+        self._awaited_echoes.clear()
+        self._stop_echo_timer()
         tasks, self._tasks = self._tasks, []
         for task in tasks:
             task.cancel()
@@ -213,6 +222,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         if device is None or not isinstance(payload, dict):
             return
         self._message_count += 1
+        self._echo_arrived(str(data.get("messageId")))
         if data.get("cmd") == "CMD_FCU_FROM_AC":
             if isinstance(hex_state := payload.get("data"), str):
                 self._start_short_task(self._async_update_device(device, hex_state))
@@ -237,24 +247,62 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
     async def _async_send_command(self, unit_id: str, hex_state: str) -> None:
         """Hand a command to Toshiba."""
         self._message_counter += 1
+        message_id = (
+            f"MB_{self._device_id[:15].upper()}-"
+            f"{self._message_counter % 100000000:08d}"
+        )
         message = {
             "sourceId": self._device_id,
-            "messageId": (
-                f"MB_{self._device_id[:15].upper()}-"
-                f"{self._message_counter % 100000000:08d}"
-            ),
+            "messageId": message_id,
             "targetId": [unit_id],
             "cmd": "CMD_FCU_TO_AC",
             "payload": {"data": hex_state},
             "timeStamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         }
+        # Before the request, because an echo can arrive before its answer
+        self._awaited_echoes.add(message_id)
+        self._stop_echo_timer()
+        self._echo_timer = self._hass.loop.call_later(
+            ECHO_WAIT_S, self._handle_missing_echo
+        )
         try:
             await self._api.async_send_command(message)
         except ToshibaAuthError as ex:
+            self._echo_arrived(message_id)
             self._on_auth_failed()
             raise HomeAssistantError("Toshiba rejected the login") from ex
         except ToshibaError as ex:
+            self._echo_arrived(message_id)
             raise HomeAssistantError(f"Command not sent: {ex}") from ex
+
+    def _stop_echo_timer(self) -> None:
+        """Stop waiting for now."""
+        if self._echo_timer is not None:
+            self._echo_timer.cancel()
+            self._echo_timer = None
+
+    def _echo_arrived(self, message_id: str) -> None:
+        """Stop waiting for this command, and for all if it was the last."""
+        self._awaited_echoes.discard(message_id)
+        if not self._awaited_echoes:
+            self._stop_echo_timer()
+
+    def _handle_missing_echo(self) -> None:
+        """Correct the state after commands with no echo. Never repeat a command.
+
+        It could undo a later one, and costs a request. Each command starts this wait
+        over, so a burst of commands costs one list.
+        """
+        self._echo_timer = None
+        self._awaited_echoes.clear()
+        # Nothing could have arrived, and the reconnection asks for the list anyway
+        if not self.connected:
+            return
+        _LOGGER.warning(
+            "A unit did not confirm a command, which may not have been applied"
+        )
+        self._refresh_at_once = True
+        self._refresh_now.set()
 
     # Periodic requests
 
@@ -264,10 +312,12 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
             try:
                 async with asyncio.timeout(REFRESH_S * jitter(0.9, 1.1)):
                     await self._refresh_now.wait()
-                await asyncio.sleep(REFRESH_MIN_S)
+                if not self._refresh_at_once:
+                    await asyncio.sleep(REFRESH_MIN_S)
             except TimeoutError:
                 pass
             self._refresh_now.clear()
+            self._refresh_at_once = False
             if not await self._async_periodic(self._async_refresh):
                 return
 

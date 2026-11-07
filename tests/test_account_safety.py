@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 import pytest
 
 from custom_components.toshiba_ac_link.const import DOMAIN
@@ -397,5 +398,150 @@ def test_server_errors_do_not_count_as_failed_logins(run_in_hass) -> None:
                 )
                 assert result["errors"] == {"base": "cannot_connect"}
             assert fake.requests["login"] == MAX_FAILED_LOGINS + 1
+
+    run_in_hass(scenario)
+
+
+async def set_temperature(hass: HomeAssistant, temperature: int = 24) -> None:
+    """Send a command through the climate entity."""
+    await hass.services.async_call(
+        "climate",
+        "set_temperature",
+        {"entity_id": "climate.living_room", "temperature": temperature},
+        blocking=True,
+    )
+
+
+def test_a_command_with_no_echo_corrects_the_state_and_is_not_repeated(
+    run_in_hass, caplog
+) -> None:
+    """Toshiba can accept a command that the unit never applies."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.02):
+                entry = await add_entry(hass)
+                seen = fake.requests["mapping"]
+
+                await set_temperature(hass)
+                assert (
+                    hass.states.get("climate.living_room").attributes["temperature"]
+                    == 24
+                )
+
+                await wait_until(lambda: fake.requests["mapping"] == seen + 1)
+                await wait_until(
+                    lambda: hass.states.get("climate.living_room").attributes[
+                        "temperature"
+                    ]
+                    == 17
+                )
+                await asyncio.sleep(0.1)
+                assert fake.requests["command"] == 1
+                assert fake.requests["mapping"] == seen + 1
+                assert caplog.text.count("did not confirm a command") == 1
+                await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_a_command_with_an_echo_makes_no_more_requests(run_in_hass, caplog) -> None:
+    """The usual case costs nothing."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.echo_commands = True
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.05):
+                entry = await add_entry(hass)
+                seen = fake.requests["mapping"]
+
+                await set_temperature(hass)
+                await asyncio.sleep(0.2)
+
+                assert fake.requests["mapping"] == seen
+                assert "did not confirm a command" not in caplog.text
+                await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_many_commands_with_no_echo_ask_for_the_list_together(run_in_hass) -> None:
+    """A unit that went away must not turn each command into two requests."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.05):
+                entry = await add_entry(hass)
+                seen = fake.requests["mapping"]
+
+                for temperature in (20, 21, 22, 23, 24):
+                    await set_temperature(hass, temperature)
+                await wait_until(lambda: fake.requests["mapping"] > seen)
+                await asyncio.sleep(0.2)
+
+                assert fake.requests["command"] == 5
+                assert fake.requests["mapping"] == seen + 1
+                await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_a_command_that_failed_awaits_no_echo(run_in_hass, caplog) -> None:
+    """The user already got the error, and nothing is there to correct."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.02):
+                entry = await add_entry(hass)
+                seen = fake.requests["mapping"]
+                fake.statuses["command"] = 500
+
+                with pytest.raises(HomeAssistantError):
+                    await set_temperature(hass)
+                await asyncio.sleep(0.1)
+
+                assert fake.requests["mapping"] == seen
+                assert "did not confirm a command" not in caplog.text
+                await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_stopping_cancels_the_wait_for_an_echo(run_in_hass) -> None:
+    """Nothing is sent after the entry is gone."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.05):
+                entry = await add_entry(hass)
+                seen = fake.requests["mapping"]
+
+                await set_temperature(hass)
+                await unload(hass, entry)
+                await asyncio.sleep(0.2)
+
+                assert fake.requests["mapping"] == seen
+
+    run_in_hass(scenario)
+
+
+def test_no_echo_while_the_socket_is_down_says_nothing_about_the_unit(
+    run_in_hass, caplog
+) -> None:
+    """It could not have arrived, and the reconnection catches up anyway."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.ECHO_WAIT_S", 0.1):
+                entry = await add_entry(hass)
+                unit = (await entry.runtime_data.get_devices())[0]
+                await set_temperature(hass)
+                fake.refuse_sockets = True
+                await fake.sockets[-1].close()
+                await wait_until(lambda: not unit.connected)
+                await asyncio.sleep(0.2)
+
+                assert "did not confirm a command" not in caplog.text
+                await unload(hass, entry)
 
     run_in_hass(scenario)

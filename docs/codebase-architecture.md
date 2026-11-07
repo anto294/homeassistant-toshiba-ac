@@ -80,6 +80,8 @@ always merged. Measured on two accounts:
   a target with both: 8 °C, and then the earlier target or 20 °C.
 - Of about 30 accepted commands, two on one unit in a row got no echo, and the unit did not
   apply them, although Toshiba answered `Success`. The same sequence worked when repeated.
+  The entity shows a command at once, so without an echo after 2 minutes a warning is
+  logged and the list corrects the state. The command is never repeated.
 - A unit reports its swing byte by itself when it turns on and off, with messages that do
   not carry the `MB_` id of a client.
 - The app and another client can be connected to one account at the same time.

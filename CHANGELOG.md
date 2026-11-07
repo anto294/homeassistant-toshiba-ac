@@ -12,6 +12,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - Turning off the 8 °C mode no longer leaves a target of 29 °C or more, at which a unit
   could really heat. It now goes back to the earlier target, or to 20 °C if that is not
   known. Turning the mode on now sets a target of 8 °C, instead of showing 2 °C or 6 °C.
+- When a unit does not confirm a command within 2 minutes, a warning is logged and the
+  entity corrects itself. Toshiba can accept a command that the unit never applies, and
+  the entity used to show it until the next refresh, up to 30 minutes later.
 
 ## [0.1.0b3] - 2026-11-07
 

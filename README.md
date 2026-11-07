@@ -215,6 +215,7 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 ## Known limitations
 
 - **It needs the cloud.** No internet or a Toshiba outage means no control. There is no local mode.
+- **A command can get lost.** In our tests Toshiba accepted about 1 command in 15 that a unit then did not apply. The entity shows the command at once, and corrects itself after 2 minutes, with a warning in the log. It does not send the command again, so check that automations did what you meant if you see that warning.
 - **Changes made in the app can arrive late.** They took a minute or two in our measurements. Commands from Home Assistant were confirmed in about a second.
 - **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
 - **New units can take a while.** A unit you add to the account appears by itself within about 30 minutes. The `reconnect` action can bring it sooner, if the last list of units is more than 15 minutes old.

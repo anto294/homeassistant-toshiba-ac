@@ -61,6 +61,7 @@ class FakeToshiba:
         self.channel_tokens: set[str] = set()
         self.bad_channel_answers: list[Any] = []
         self.raw_answers: dict[str, str] = {}
+        self.echo_commands = False
         self.base_url = ""
 
     @staticmethod
@@ -146,7 +147,12 @@ class FakeToshiba:
         """Handle a command."""
         if refusal := self._refusal("command"):
             return refusal
-        self.commands.append(await request.json())
+        command = await request.json()
+        self.commands.append(command)
+        if self.echo_commands:
+            await self.publish(
+                "CMD_FCU_FROM_AC", command["payload"], command["messageId"]
+            )
         return self._answer(self.command_answer)
 
     async def energy(self, _request: web.Request) -> web.Response:
@@ -178,7 +184,9 @@ class FakeToshiba:
                 break
         return socket
 
-    async def publish(self, cmd: str, payload: dict[str, Any]) -> None:
+    async def publish(
+        self, cmd: str, payload: dict[str, Any], message_id: str = "0000000117"
+    ) -> None:
         """Send a message of the unit, shaped as captured from the real channel."""
         await self.sockets[-1].send_json(
             {
@@ -189,7 +197,7 @@ class FakeToshiba:
                 "dataType": "json",
                 "data": {
                     "sourceId": UNIT_ID,
-                    "messageId": "0000000117",
+                    "messageId": message_id,
                     "cmd": cmd,
                     "timeStamp": "006aef17ba",
                     "payload": payload,
