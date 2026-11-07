@@ -315,6 +315,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
                 if not self._refresh_at_once:
                     await asyncio.sleep(REFRESH_MIN_S)
             except TimeoutError:
+                # The usual way here: the regular wait ended, and nobody asked earlier
                 pass
             self._refresh_now.clear()
             self._refresh_at_once = False

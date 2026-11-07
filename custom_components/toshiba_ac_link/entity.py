@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import logging
-
 from .toshiba.device import ToshibaAcDevice
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-
-_LOGGER = logging.getLogger(__name__)
 
 
 # ---------------------------
