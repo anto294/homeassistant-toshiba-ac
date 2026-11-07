@@ -82,8 +82,16 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
 
     @property
     def is_on(self):
-        """Return True if the device is on or completely off."""
-        return self._device.ac_status == ToshibaAcStatus.ON
+        """Return True if the device runs at the user's request.
+
+        During self cleaning the AC reports ON, because the fan dries the heat
+        exchanger, but the user turned it off and the Toshiba app shows it as off.
+        Turning it on goes through set_ac_status(ON), which ends the cleaning.
+        """
+        return (
+            self._device.ac_status == ToshibaAcStatus.ON
+            and self._device.ac_self_cleaning != ToshibaAcSelfCleaning.ON
+        )
 
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""

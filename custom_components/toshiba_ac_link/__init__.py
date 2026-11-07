@@ -66,7 +66,7 @@ async def _patched_send_message(
 
 toshiba_amqp_api.ToshibaAcAmqpApi.send_message = _patched_send_message
 
-PLATFORMS = ["climate", "select", "sensor", "switch"]
+PLATFORMS = ["binary_sensor", "climate", "select", "sensor", "switch"]
 
 # The upstream AMQP connect has no timeout of its own
 CONNECT_TIMEOUT_S = 30
