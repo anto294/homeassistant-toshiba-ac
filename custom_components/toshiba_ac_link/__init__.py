@@ -25,6 +25,7 @@ from homeassistant.exceptions import (
 )
 
 from .const import DOMAIN
+from .reconnect import ToshibaReconnectManager
 
 # Monkey-patch: translate the raw Azure connection errors into something the
 # user can act on. IoT Hub allows only one active connection per device, so a
@@ -70,11 +71,17 @@ PLATFORMS = ["climate", "select", "sensor", "switch"]
 # The upstream AMQP connect has no timeout of its own
 CONNECT_TIMEOUT_S = 30
 
+SHUTDOWN_TIMEOUT_S = 10
+
 # Raised by the Azure client when IoT Hub refuses the connection. Setup always
 # registers a new SAS token, so these point at a competing connection.
 CONNECTION_REFUSED_ERRORS = (ValueError, CredentialError, UnauthorizedError)
 
 _LOGGER = logging.getLogger(__name__)
+
+# The Azure client logs a warning for each dropped connection and retry, and the
+# integration reports what matters by itself.
+logging.getLogger("azure.iot.device").setLevel(logging.ERROR)
 
 
 def _create_device_manager(entry: ConfigEntry) -> ToshibaAcDeviceManager:
@@ -99,6 +106,14 @@ def _create_device_manager(entry: ConfigEntry) -> ToshibaAcDeviceManager:
 async def _async_connect(device_manager: ToshibaAcDeviceManager) -> str:
     """Connect and return the SAS token that is in use."""
     return await asyncio.wait_for(device_manager.connect(), timeout=CONNECT_TIMEOUT_S)
+
+
+async def _async_shutdown(device_manager: ToshibaAcDeviceManager) -> None:
+    """Close the connection, without letting a slow or failed close stop the caller."""
+    try:
+        await asyncio.wait_for(device_manager.shutdown(), timeout=SHUTDOWN_TIMEOUT_S)
+    except Exception as ex:
+        _LOGGER.warning("Error while shutting down device manager: %s", ex)
 
 
 def _setup_error(ex: Exception) -> ConfigEntryError:
@@ -178,6 +193,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _clear_connection_notice(hass)
 
+    reconnect = ToshibaReconnectManager(hass, entry)
+    entry.async_on_unload(reconnect.stop)
+
+    async def sas_token_updated(_sas_token: str) -> None:
+        """Handle a new SAS token, which means the client reconnected by itself."""
+        reconnect.recovered(device_manager)
+
+    device_manager.on_sas_token_updated_callback.add(sas_token_updated)
+    reconnect.attach(device_manager)
+
+    # Fetch the devices once before the platforms ask for them, so a slow answer
+    # ends in a retry and not in a platform setup that gets cancelled.
+    try:
+        await asyncio.wait_for(device_manager.get_devices(), timeout=CONNECT_TIMEOUT_S)
+    except Exception as ex:
+        await _async_shutdown(device_manager)
+        raise _setup_error(ex) from ex
+
     # Store device manager
     hass.data[DOMAIN][entry.entry_id] = device_manager
 
@@ -212,10 +245,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        device_manager: ToshibaAcDeviceManager = hass.data[DOMAIN].pop(entry.entry_id)
-        try:
-            await device_manager.shutdown()
-        except Exception as ex:
-            _LOGGER.warning("Error while shutting down device manager: %s", ex)
+        await _async_shutdown(hass.data[DOMAIN].pop(entry.entry_id))
 
     return unload_ok
