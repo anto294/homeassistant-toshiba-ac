@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0b3] - 2026-11-07
+
 ### Added
 
 - A unit added to the account now appears by itself within about 30 minutes, without a
