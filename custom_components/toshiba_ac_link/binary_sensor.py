@@ -1,4 +1,4 @@
-"""Binary sensor platform for the Toshiba Link integration."""
+"""Binary sensor platform for the Toshiba AC Link integration."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Diagnostics support for Toshiba Link."""
+"""Diagnostics support for Toshiba AC Link."""
 
 from __future__ import annotations
 

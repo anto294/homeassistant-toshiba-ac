@@ -1,6 +1,6 @@
 # Architecture
 
-How the Toshiba Link integration talks to Toshiba.
+How the Toshiba AC Link integration talks to Toshiba.
 
 ## Entity platforms
 

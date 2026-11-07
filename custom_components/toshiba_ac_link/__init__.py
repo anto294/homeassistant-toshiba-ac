@@ -1,4 +1,4 @@
-"""The Toshiba Link integration."""
+"""The Toshiba AC Link integration."""
 
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ def _async_units_changed(
 #   async_setup_entry
 # ---------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
-    """Set up Toshiba Link from a config entry.
+    """Set up Toshiba AC Link from a config entry.
 
     Nothing here logs in. Only the forms do, when the user sends them, so no
     restart can repeat a login.

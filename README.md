@@ -1,4 +1,4 @@
-# Toshiba Link for Home Assistant
+# Toshiba AC Link for Home Assistant
 
 [![GitHub release](https://img.shields.io/github/v/release/anto294/homeassistant-toshiba-ac?include_prereleases&style=plastic)](https://github.com/anto294/homeassistant-toshiba-ac/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/anto294/homeassistant-toshiba-ac/ci.yml?style=plastic)](https://github.com/anto294/homeassistant-toshiba-ac/actions)
@@ -7,7 +7,7 @@
 This integration lets you monitor and control Toshiba air conditioners with a Wi-Fi module or adapter from Home Assistant: mode, temperature, fan, vanes, power presets, comfort functions, temperatures and energy use. It uses the same cloud service and the same realtime channel as the current Toshiba app, with its own client and no other dependencies, and it is built so that restarts of Home Assistant cannot harm your Toshiba account.
 
 > [!NOTE]
-> Toshiba Link started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac). It is a separate integration with its own `toshiba_ac_link` domain, so please report problems [here](https://github.com/anto294/homeassistant-toshiba-ac/issues), not to those projects. See [Differences from those projects](#differences-from-those-projects).
+> Toshiba AC Link started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac). It is a separate integration with its own `toshiba_ac_link` domain, so please report problems [here](https://github.com/anto294/homeassistant-toshiba-ac/issues), not to those projects. See [Differences from those projects](#differences-from-those-projects).
 
 ## Contents
 
@@ -56,7 +56,7 @@ You also need:
 
 ### Marketplace (recommended)
 
-Since Home Assistant 2026.11, HACS is built into Home Assistant as the Marketplace. Toshiba Link is not listed in its catalog yet, so open it directly:
+Since Home Assistant 2026.11, HACS is built into Home Assistant as the Marketplace. Toshiba AC Link is not listed in its catalog yet, so open it directly:
 
 [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=anto294&repository=homeassistant-toshiba-ac&category=integration)
 
@@ -72,7 +72,7 @@ The Marketplace offers a new version as an update under **Settings → Updates**
 
 ## Configuration
 
-Go to **Settings → Devices & services → Add integration** and search for **Toshiba Link**.
+Go to **Settings → Devices & services → Add integration** and search for **Toshiba AC Link**.
 
 | Field | Description |
 |---|---|
@@ -266,8 +266,8 @@ Then [open an issue](https://github.com/anto294/homeassistant-toshiba-ac/issues)
 
 ## Removal
 
-1. In **Settings → Devices & services → Toshiba Link**, open the three-dot menu of the entry and select **Delete**. This also removes its devices and entities.
-2. In **Settings → Marketplace**, open **Toshiba Link**, then three-dot menu → **Uninstall**, and confirm. After a manual installation, delete `config/custom_components/toshiba_ac_link/` instead.
+1. In **Settings → Devices & services → Toshiba AC Link**, open the three-dot menu of the entry and select **Delete**. This also removes its devices and entities.
+2. In **Settings → Marketplace**, open **Toshiba AC Link**, then three-dot menu → **Uninstall**, and confirm. After a manual installation, delete `config/custom_components/toshiba_ac_link/` instead.
 3. Restart Home Assistant if a repair asks you to. After a manual installation, always restart it.
 
 Remove automations, scripts and dashboards that use these entities yourself. Long-term statistics stay until you delete them in **Developer tools → Statistics**.
@@ -278,11 +278,11 @@ The integration is available in English, German, Dutch and Italian. To add a lan
 
 ## Migrating from another Toshiba integration
 
-Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshiba_ac_community` and does not take over their entries. Do not run them on the same account at once, because they add requests and logins that this integration cannot limit:
+Toshiba AC Link uses its own domain, so it installs next to `toshiba_ac` or `toshiba_ac_community` and does not take over their entries. Do not run them on the same account at once, because they add requests and logins that this integration cannot limit:
 
 1. Note the entity IDs that your automations and dashboards use.
 2. Delete the entry of the old integration, and uninstall it.
-3. Install Toshiba Link and add your account.
+3. Install Toshiba AC Link and add your account.
 4. Check your automations, scripts and dashboards, because what refers to the old integration can stop working:
    - Entity IDs can change. They are built from the name of each unit and the language of Home Assistant, and can start with the area of the unit. For example, `climate.clima_cucina` can become `climate.cucina_clima_cucina`, and `switch.clima_cucina_eco_mode` can become `switch.cucina_clima_cucina_modalita_eco`. To keep a dashboard or a script as it is, give the entity its old ID back in the settings of the entity.
    - Device actions, triggers and conditions refer to the old device, which no longer exists, so choose the new device in them. Home Assistant disables a script that has such an action, and reports it under **Settings → System → Repairs**.
@@ -292,7 +292,7 @@ Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshib
 
 ## Differences from those projects
 
-| | Toshiba Link | [h4de5](https://github.com/h4de5/home-assistant-toshiba_ac) | [vmvelev](https://github.com/vmvelev/home-assistant-toshiba_ac) |
+| | Toshiba AC Link | [h4de5](https://github.com/h4de5/home-assistant-toshiba_ac) | [vmvelev](https://github.com/vmvelev/home-assistant-toshiba_ac) |
 |---|---|---|---|
 | Domain | `toshiba_ac_link` | `toshiba_ac` | `toshiba_ac_community` |
 | Connection to Toshiba | Own client, on the channel of the current app (Azure Web PubSub) | `toshiba-ac` library, on IoT Hub | `toshiba-ac-community` library, on IoT Hub |
@@ -309,7 +309,7 @@ Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshib
 
 ## Quality scale
 
-Home Assistant grades the integrations in its core with the [Integration Quality Scale](https://contributors.home-assistant.io/core/quality-scale/). It does not review custom integrations, so Toshiba Link has no official tier. This project follows those rules as a goal, and this is its own assessment. [`quality_scale.yaml`](custom_components/toshiba_ac_link/quality_scale.yaml) holds the state of each rule.
+Home Assistant grades the integrations in its core with the [Integration Quality Scale](https://contributors.home-assistant.io/core/quality-scale/). It does not review custom integrations, so Toshiba AC Link has no official tier. This project follows those rules as a goal, and this is its own assessment. [`quality_scale.yaml`](custom_components/toshiba_ac_link/quality_scale.yaml) holds the state of each rule.
 
 | Tier | Rules | Met | Not applicable | Not met |
 |---|---:|---:|---:|---:|
@@ -322,7 +322,7 @@ By this assessment, every rule of the four tiers is met or does not apply. That 
 
 ## Credits and license
 
-Toshiba Link exists thanks to the work of these people and projects:
+Toshiba AC Link exists thanks to the work of these people and projects:
 
 | Project | By | What this project owes it |
 |---|---|---|
@@ -334,6 +334,6 @@ Toshiba Link exists thanks to the work of these people and projects:
 
 Thank you all. Thanks also to everyone who reported problems and tested units in those projects.
 
-Toshiba Link is distributed under the [GNU General Public License v3.0](LICENSE), like the integrations it comes from. The files that come from the Apache-2.0 library keep their [license](custom_components/toshiba_ac_link/toshiba/LICENSE) and notices.
+Toshiba AC Link is distributed under the [GNU General Public License v3.0](LICENSE), like the integrations it comes from. The files that come from the Apache-2.0 library keep their [license](custom_components/toshiba_ac_link/toshiba/LICENSE) and notices.
 
 This is an independent project, not affiliated with or endorsed by Toshiba. Toshiba and other names are trademarks of their owners.

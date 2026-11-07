@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Home Assistant custom integration (Marketplace, formerly HACS) for Toshiba air conditioners, named "Toshiba Link". Domain: `toshiba_ac_link`. All code lives in `custom_components/toshiba_ac_link/`. Repository: `anto294/homeassistant-toshiba-ac`, which started as a fork of `h4de5/home-assistant-toshiba_ac` (domain `toshiba_ac`), includes work from `vmvelev/home-assistant-toshiba_ac` (domain `toshiba_ac_community`), and is distributed separately. Repository links (manifest, README, release scripts) must point to this repository, not to those. Both are GPL-3.0, so this project stays GPL-3.0, and code taken from them needs its origin in the commit message.
+Home Assistant custom integration (Marketplace, formerly HACS) for Toshiba air conditioners, named "Toshiba AC Link". Domain: `toshiba_ac_link`. All code lives in `custom_components/toshiba_ac_link/`. Repository: `anto294/homeassistant-toshiba-ac`, which started as a fork of `h4de5/home-assistant-toshiba_ac` (domain `toshiba_ac`), includes work from `vmvelev/home-assistant-toshiba_ac` (domain `toshiba_ac_community`), and is distributed separately. Repository links (manifest, README, release scripts) must point to this repository, not to those. Both are GPL-3.0, so this project stays GPL-3.0, and code taken from them needs its origin in the commit message.
 
 Everything in the repository is in English: code, comments, docs, commits and pull requests. The `translations/` files are the only exception.
 

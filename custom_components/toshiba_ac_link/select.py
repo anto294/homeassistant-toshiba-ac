@@ -1,4 +1,4 @@
-"""Select platform for Toshiba Link integration."""
+"""Select platform for Toshiba AC Link integration."""
 
 from __future__ import annotations
 

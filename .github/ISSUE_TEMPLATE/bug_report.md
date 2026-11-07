@@ -38,7 +38,7 @@ If applicable, add screenshots to help explain your problem.
 All fields in this sections are required.
 -->
  - Home Assistant version: <!-- e.g. HA 2026.11.0 -->
- - Toshiba Link version: <!-- e.g. v1.0.0 -->
+ - Toshiba AC Link version: <!-- e.g. v1.0.0 -->
  - Toshiba AC model and adapter: <!-- e.g. Seiya with RB-N106S-G -->
 
 

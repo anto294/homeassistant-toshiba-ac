@@ -1,5 +1,5 @@
 {
-    "name": "Toshiba Link",
+    "name": "Toshiba AC Link",
     "homeassistant": "2026.11.0",
     "zip_release": true,
     "filename": "toshiba_ac_link.zip"

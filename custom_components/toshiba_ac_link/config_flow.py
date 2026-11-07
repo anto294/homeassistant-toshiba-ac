@@ -1,4 +1,4 @@
-"""Config flow for the Toshiba Link integration."""
+"""Config flow for the Toshiba AC Link integration."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ STEP_REAUTH_DATA_SCHEMA = probatio.Schema(
 #   ToshibaLinkConfigFlow
 # ---------------------------
 class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Toshiba Link."""
+    """Handle a config flow for Toshiba AC Link."""
 
     VERSION = 1
 

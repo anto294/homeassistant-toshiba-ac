@@ -1,1 +1,1 @@
-"""Tests for the Toshiba Link integration."""
+"""Tests for the Toshiba AC Link integration."""

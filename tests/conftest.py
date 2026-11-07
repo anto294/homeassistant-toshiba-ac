@@ -1,4 +1,4 @@
-"""Shared fixtures for Toshiba Link tests, which run on a real Home Assistant core."""
+"""Shared fixtures for Toshiba AC Link tests, which run on a real Home Assistant core."""
 
 from __future__ import annotations
 

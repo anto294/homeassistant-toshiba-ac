@@ -7,6 +7,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Changed
+
+- The integration is now called Toshiba AC Link, which says what it controls. The domain
+  stays `toshiba_ac_link`, so entries, entities and automations do not change.
+
 ### Fixed
 
 - The migration guide no longer says that most entity IDs stay the same. It now explains
