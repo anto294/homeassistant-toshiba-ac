@@ -5,6 +5,7 @@ The mock in conftest.py answers everything, so it cannot show what these look fo
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import logging
 from unittest.mock import patch
 
@@ -19,6 +20,7 @@ from custom_components.toshiba_ac_link.toshiba.api import ToshibaApi
 
 from custom_components.toshiba_ac_link.toshiba.device import ToshibaAcDevice
 from custom_components.toshiba_ac_link.toshiba.properties import (
+    ToshibaAcDeviceEnergyConsumption,
     ToshibaAcMeritA,
     ToshibaAcMode,
 )
@@ -747,6 +749,30 @@ def test_an_answer_with_undelivered_units_still_fails(run_in_hass) -> None:
                 )
 
             assert fake.requests["command"] == 1
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_an_energy_reading_after_the_start_updates_the_sensor(run_in_hass) -> None:
+    """The first reading comes before the entity exists, and later ones through this."""
+    energy = "sensor.living_room_energy_consumption"
+    since = datetime(2026, 1, 1, tzinfo=UTC)
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units = [FakeToshiba.unit(model="3", merit="2c03")]
+            entry = await add_real_entry(hass)
+            await wait_until(lambda: hass.states.get(energy).state == "2000")
+            unit = await the_unit(entry)
+
+            await unit.handle_update_ac_energy_consumption(
+                ToshibaAcDeviceEnergyConsumption(3500, since)
+            )
+
+            state = hass.states.get(energy)
+            assert state.state == "3500"
+            assert state.attributes["last_reset"] == since.isoformat()
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
