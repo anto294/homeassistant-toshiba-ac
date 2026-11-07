@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
+from homeassistant.exceptions import HomeAssistantError
 import pytest
 
 from custom_components.toshiba_ac_link.toshiba.device import (
@@ -28,7 +29,7 @@ from custom_components.toshiba_ac_link.toshiba.properties import (
     ToshibaAcWirelessLed,
 )
 
-from .fake_toshiba import RUNNING_STATE
+from .fake_toshiba import RUNNING_STATE, UNIT_STATE
 
 INDEPENDENT = "ffffffff" + "b0" + "ff" * 17
 
@@ -96,10 +97,62 @@ async def test_a_mode_that_the_unit_lacks_is_refused() -> None:
     """Merit bits can say that a unit only heats, and no command should leave then."""
     unit = make_unit(merit="0100")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HomeAssistantError, match="Unit cannot use the mode COOL"):
         await unit.set_ac_mode(ToshibaAcMode.COOL)
 
     unit._send_command.assert_not_awaited()
+    assert unit.ac_mode is ToshibaAcMode.COOL
+
+
+async def test_a_status_that_the_unit_lacks_is_refused() -> None:
+    """Every unit has every status today, but the tables can say otherwise."""
+    unit = make_unit()
+    unit.supported.ac_status.remove(ToshibaAcStatus.OFF)
+
+    with pytest.raises(HomeAssistantError, match="Unit cannot use the status OFF"):
+        await unit.set_ac_status(ToshibaAcStatus.OFF)
+
+    unit._send_command.assert_not_awaited()
+    assert unit.ac_status is ToshibaAcStatus.ON
+
+
+DRY_ON_A_HEAT_ONLY_UNIT = "3044" + RUNNING_STATE[4:]
+
+
+@pytest.mark.parametrize(
+    ("status", "frame"),
+    [(ToshibaAcStatus.OFF, "31ff"), (ToshibaAcStatus.ON, "30ff")],
+)
+async def test_a_command_that_keeps_an_unsupported_mode_is_sent(status, frame) -> None:
+    """A unit in a mode outside its features must still be possible to turn off."""
+    unit = make_unit(DRY_ON_A_HEAT_ONLY_UNIT, merit="0100")
+    assert ToshibaAcMode.DRY not in unit.supported.ac_mode
+
+    await unit.set_ac_status(status)
+
+    assert unit._send_command.await_args.args[1].startswith(frame)
+    assert unit.ac_status is status
+    assert unit.ac_mode is ToshibaAcMode.DRY
+
+
+async def test_other_settings_work_in_a_mode_outside_the_features() -> None:
+    """The check looks at what a command sets, not at what the unit is doing."""
+    unit = make_unit(DRY_ON_A_HEAT_ONLY_UNIT, merit="0100")
+
+    await unit.set_ac_temperature(21)
+
+    assert sent_state(unit).ac_temperature == 21
+
+
+async def test_turning_on_in_a_mode_that_the_unit_lacks_is_refused() -> None:
+    """The status in that one command must not leave without its mode."""
+    unit = make_unit(UNIT_STATE, merit="0100")
+
+    with pytest.raises(HomeAssistantError, match="COOL"):
+        await unit.turn_on_in_mode(ToshibaAcMode.COOL)
+
+    unit._send_command.assert_not_awaited()
+    assert unit.ac_status is ToshibaAcStatus.OFF
 
 
 async def test_turn_on_in_mode_clears_self_cleaning() -> None:

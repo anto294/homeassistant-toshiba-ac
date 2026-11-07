@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 import pytest
 
@@ -636,6 +637,56 @@ def test_a_select_still_changes_what_it_controls(
 
             assert [c["payload"]["data"][:16] for c in fake.commands] == [frame]
             assert hass.states.get(select).state == option
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_a_unit_in_a_mode_outside_its_features_can_be_turned_on_and_off(
+    run_in_hass,
+) -> None:
+    """A raw ValueError used to stop every command, even the one that turns it off."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units = [FakeToshiba.unit(merit="0100")]
+            entry = await add_real_entry(hass)
+            unit = await the_unit(entry)
+            assert unit.ac_mode is ToshibaAcMode.DRY
+
+            for action, frame, state in (
+                ("turn_on", "30ff", "dry"),
+                ("turn_off", "31ff", "off"),
+            ):
+                await hass.services.async_call(
+                    "climate", action, {"entity_id": CLIMATE}, blocking=True
+                )
+                assert fake.commands[-1]["payload"]["data"].startswith(frame)
+                assert hass.states.get(CLIMATE).state == state
+            assert fake.requests["command"] == 2
+
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_an_action_for_a_mode_the_unit_lacks_fails_clearly(run_in_hass) -> None:
+    """set_temperature takes a mode that Home Assistant does not check first."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units = [FakeToshiba.unit(merit="0100")]
+            entry = await add_real_entry(hass)
+
+            with pytest.raises(HomeAssistantError, match="cannot use the mode COOL"):
+                await hass.services.async_call(
+                    "climate",
+                    "set_temperature",
+                    {"entity_id": CLIMATE, "temperature": 20, "hvac_mode": "cool"},
+                    blocking=True,
+                )
+
+            assert fake.requests["command"] == 0
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)

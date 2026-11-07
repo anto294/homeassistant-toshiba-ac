@@ -23,6 +23,8 @@ import logging
 import struct
 from typing import Any, Generic, TypeVar
 
+from homeassistant.exceptions import HomeAssistantError
+
 from .fcu_state import ToshibaAcFcuState
 from .features import ToshibaAcFeatures
 from .properties import (
@@ -201,12 +203,18 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         The unit's answer can take more than a minute to arrive, and shows the same
         values. Without this, the entity would jump back until then.
         """
+        # Only what the command sets: a unit can already be in a mode outside its
+        # features, and it must still be possible to turn it off
+        if state.ac_status not in self.supported.ac_status:
+            raise HomeAssistantError(
+                f"{self.name} cannot use the status {state.ac_status.name}"
+            )
+        if state.ac_mode not in self.supported.ac_mode:
+            raise HomeAssistantError(
+                f"{self.name} cannot use the mode {state.ac_mode.name}"
+            )
         future = ToshibaAcFcuState.from_hex_state(self.fcu_state.encode())
         future.update(state.encode())
-        if future.ac_status not in self.supported.ac_status:
-            raise ValueError(f"Unsupported status: {future.ac_status}")
-        if future.ac_mode not in self.supported.ac_mode:
-            raise ValueError(f"Unsupported mode: {future.ac_mode}")
         self._limit_to_supported(state, future)
 
         # Wireless LED support is not in the merit string: a unit that has it reports it

@@ -17,6 +17,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   target now lasts for one visit to the mode, so if the mode was turned on in the app,
   turning it off goes to 20 °C. A command that fails keeps the saved target for the next
   attempt.
+- A unit reporting a mode outside its features can be turned on and off again. Every
+  command used to fail with a raw error. A command that asks for a mode or status the unit
+  lacks now fails with a clear message, and sends nothing.
 
 ## [0.1.0b4] - 2026-11-07
 
