@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-07
+
 ### Changed
 
 - The integration is now called Toshiba AC Link, which says what it controls. The domain
