@@ -5,17 +5,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-import secrets
 import time
 
-import aiohttp
 from azure.iot.device.common.transport_exceptions import (
     ConnectionDroppedError,
     UnauthorizedError,
 )
 from azure.iot.device.exceptions import CredentialError
-from toshiba_ac.device_manager import ToshibaAcDeviceManager
-from toshiba_ac.utils import amqp_api as toshiba_amqp_api, http_api as toshiba_http_api
+from toshiba_ac_community.device_manager import ToshibaAcDeviceManager
+from toshiba_ac_community.utils import amqp_api as toshiba_amqp_api
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -28,24 +26,6 @@ from homeassistant.exceptions import (
 )
 
 from .const import DOMAIN
-
-# Monkey-patch: Toshiba's WAF requires a Device-ID header since ~2026-07-17.
-# The upstream library (v0.3.11) doesn't include it, so we patch _ensure_session
-# to add a random Device-ID to the aiohttp session headers.
-
-
-async def _patched_ensure_session(self: toshiba_http_api.ToshibaAcHttpApi) -> None:
-    """Patched session creation with Device-ID header for WAF compatibility."""
-    async with self._session_lock:
-        if not self.session or self.session.closed:
-            timeout = aiohttp.ClientTimeout(total=20, connect=10, sock_read=15)
-            self.session = aiohttp.ClientSession(
-                timeout=timeout,
-                headers={"Device-ID": secrets.token_hex(8)},
-            )
-
-
-toshiba_http_api.ToshibaAcHttpApi._ensure_session = _patched_ensure_session
 
 # Monkey-patch: translate the raw Azure connection errors into something the
 # user can act on. IoT Hub allows only one active connection per device, so a
@@ -71,15 +51,16 @@ CONNECTION_DROPPED_ERROR = (
 NOTIFICATION_ID = "toshiba_ac_link_connection_refused"
 
 
+_original_send_message = toshiba_amqp_api.ToshibaAcAmqpApi.send_message
+
+
 async def _patched_send_message(
-    self: toshiba_amqp_api.ToshibaAcAmqpApi, msg: str
+    self: toshiba_amqp_api.ToshibaAcAmqpApi, message: str
 ) -> None:
-    """Patched AMQP send that names the real cause instead of "Credentials invalid"."""
+    """Send as the library does, and name the real cause instead of "Credentials invalid"."""
     try:
-        await self.device.send_message(msg)
-    except CredentialError as ex:
-        raise HomeAssistantError(CONNECTION_REFUSED_ERROR.format(err=ex)) from ex
-    except (UnauthorizedError, ConnectionDroppedError) as ex:
+        await _original_send_message(self, message)
+    except (CredentialError, UnauthorizedError, ConnectionDroppedError) as ex:
         raise HomeAssistantError(CONNECTION_REFUSED_ERROR.format(err=ex)) from ex
 
 

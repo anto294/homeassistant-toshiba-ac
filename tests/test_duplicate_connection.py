@@ -81,7 +81,7 @@ class TestCommandErrorMessage:
     )
     async def test_error_is_translated(self, error):
         """Raw Azure errors become a HomeAssistantError that names the cause."""
-        from toshiba_ac.utils import amqp_api as patched_module
+        from toshiba_ac_community.utils import amqp_api as patched_module
 
         api = self.make_api()
         api.device.send_message = AsyncMock(side_effect=error)
@@ -97,7 +97,7 @@ class TestCommandErrorMessage:
     @pytest.mark.asyncio
     async def test_valid_send_passes_through(self):
         """A working connection is not touched."""
-        from toshiba_ac.utils import amqp_api as patched_module
+        from toshiba_ac_community.utils import amqp_api as patched_module
 
         api = self.make_api()
         api.device.send_message = AsyncMock(return_value=None)
