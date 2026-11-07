@@ -22,6 +22,15 @@ from custom_components.toshiba_ac_link.toshiba.properties import (
 
 from custom_components.toshiba_ac_link.climate import ToshibaClimate
 from custom_components.toshiba_ac_link.const import DOMAIN
+from custom_components.toshiba_ac_link.select import (
+    ToshibaAcEnumSelectDescription,
+    ToshibaAcSelectDescription,
+)
+from custom_components.toshiba_ac_link.switch import (
+    ToshibaAcEnumSwitchDescription,
+    ToshibaAcSwitchDescription,
+)
+from custom_components.toshiba_ac_link.toshiba.features import ToshibaAcFeatures
 
 from .conftest import async_add_entry, make_device, make_manager
 
@@ -285,3 +294,74 @@ def test_pushed_state_reaches_the_entities(run_in_hass) -> None:
         assert hass.states.get("climate.living_room").attributes["temperature"] == 25
 
     run_in_hass(scenario)
+
+
+def test_a_unit_without_those_functions_gets_no_selects_or_switches(
+    run_in_hass,
+) -> None:
+    """Merit bits decide what exists, on the real features."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        device = make_device()
+        device.supported = ToshibaAcFeatures.from_merit_string_and_model("0000", "1")
+        await async_add_entry(hass, make_manager([device]))
+
+        assert hass.states.get("select.living_room_fireplace_mode") is None
+        assert hass.states.get("select.living_room_outdoor_unit_silent_mode") is None
+        assert hass.states.get("switch.living_room_eco_mode") is None
+        assert hass.states.get("switch.living_room_8_degc_mode") is None
+
+    run_in_hass(scenario)
+
+
+def test_a_base_description_offers_nothing() -> None:
+    """What decides that an entity exists says no until a subclass says otherwise."""
+    device = make_device()
+    features = device.supported
+
+    switch = ToshibaAcSwitchDescription(key="base")
+    assert switch.is_on(device) is False
+    assert switch.is_supported(features) is False
+
+    select = ToshibaAcSelectDescription(key="base")
+    assert select.current_option_name(device) is None
+    assert select.get_option_names(features) == []
+    assert select.is_supported(features) is False
+
+
+async def test_base_descriptions_send_nothing() -> None:
+    """A description without a setter has nothing to call."""
+    device = make_device()
+
+    await ToshibaAcSwitchDescription(key="base").async_turn_on(device)
+    await ToshibaAcSwitchDescription(key="base").async_turn_off(device)
+    await ToshibaAcSelectDescription(key="base").async_select_option_name(device, "x")
+
+    device.set_ac_merit_a.assert_not_awaited()
+
+
+async def test_an_enum_description_needs_its_attribute() -> None:
+    """Without an attribute there is nothing to read or to set."""
+    device = make_device()
+    description = ToshibaAcEnumSelectDescription(
+        key="base", values=[ToshibaAcMeritA.ECO]
+    )
+
+    assert description.get_device_attr(device) is None
+    assert description.get_features_attr(device.supported) == []
+    assert description.current_option_name(device) is None
+
+    await description.async_set_attr(device, ToshibaAcMeritA.ECO)
+    device.set_ac_merit_a.assert_not_awaited()
+
+
+async def test_an_enum_description_ignores_an_empty_value() -> None:
+    """A switch without an off value has nothing to send."""
+    device = make_device(ac_merit_a=ToshibaAcMeritA.ECO)
+    description = ToshibaAcEnumSwitchDescription(
+        key="eco", ac_attr_name="ac_merit_a", ac_on_value=ToshibaAcMeritA.ECO
+    )
+
+    await description.async_turn_off(device)
+
+    device.set_ac_merit_a.assert_not_awaited()
