@@ -207,10 +207,10 @@ Tested by the author on Home Assistant 2026.11, on two accounts:
 
 | Unit | Toshiba model data | Tried so far |
 |---|---|---|
-| RAS-B10N4KVSG-E, 5 units, firmware 5.0.00 | Model 2, features `2c00` | Reading, turning on and off, temperature, reconnection, restart. In cooling and dry only, not yet heating or the 8 °C mode |
-| Unknown model, 2 units, firmware 5.0.00 | Model 3, features `2c03` | Reading with the client alone. No commands, and not yet the energy sensor |
+| RAS-B10N4KVSG-E, 5 units, firmware 5.0.00 | Model 2, features `2c00` | Reading, turning on in a mode with one command, turning off, temperature, fan while off, 8 °C mode with targets of 10 and 13 °C, silent mode, reconnection, restart |
+| Unknown model, 2 units, firmware 5.0.00 | Model 3, features `2c03` | Reading, the energy answer, turning on in a mode with one command, turning off, and the 8 °C mode, where the unit keeps its target at 16 °C or below. With the client alone, not yet in Home Assistant |
 
-Results with other units are welcome in the [issues](https://github.com/anto294/homeassistant-toshiba-ac/issues). The diagnostics file shows the model data of each unit. On model 3, the upper limit of the 8 °C mode is not confirmed: the app seems to allow more than the 16 °C used here.
+Results with other units are welcome in the [issues](https://github.com/anto294/homeassistant-toshiba-ac/issues). The diagnostics file shows the model data of each unit. Not yet tried on a real unit: toggling during self cleaning, independent vanes, and a unit joining or leaving the account.
 
 ## Known limitations
 

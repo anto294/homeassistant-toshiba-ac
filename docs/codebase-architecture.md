@@ -73,6 +73,14 @@ always merged. Measured on two accounts:
   about a second. Changes made in the app arrived 90 to 100 seconds after the time in
   their own messages, four times. The cause of the difference is unknown. A command updates the state as soon as Toshiba accepts
   it, and a slow answer from the unit must never lead to a repeat.
+- In the 8 °C mode the wire value is the target plus 16. A model 3 unit held it at 32, or
+  16 °C, when sent more, so its limit is 16 although the app's code suggests 30. Model 2
+  accepted 10 and 13 °C, and more was not tried. Entering this mode leaves the wire value
+  as it was, and so does leaving it.
+- Of about 30 accepted commands, two on one unit in a row got no echo, and the unit did not
+  apply them, although Toshiba answered `Success`. The same sequence worked when repeated.
+- A unit reports its swing byte by itself when it turns on and off, with messages that do
+  not carry the `MB_` id of a client.
 - The app and another client can be connected to one account at the same time.
 - The timestamps of a unit's own messages are about an hour ahead, and off by tens of
   seconds per unit. Do not use them.
