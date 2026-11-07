@@ -326,6 +326,9 @@ def test_bad_energy_answers_leave_the_sensor_unknown(run_in_hass, answer) -> Non
             fake.units = [FakeToshiba.unit(model="3", merit="2c03")]
             fake.raw_answers["energy"] = answer
             entry = await add_real_entry(hass)
+            # Without waiting for the answer, this would pass without looking at it
+            await wait_until(lambda: fake.requests["energy"] == 1)
+            await asyncio.sleep(0.05)
             await hass.async_block_till_done()
             assert entry.state is ConfigEntryState.LOADED
             energy = hass.states.get("sensor.living_room_energy_consumption")

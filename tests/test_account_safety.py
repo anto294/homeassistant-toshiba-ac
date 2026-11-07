@@ -341,15 +341,17 @@ def test_energy_is_not_read_again_by_a_restart(run_in_hass) -> None:
         async with run_fake_toshiba() as fake:
             fake.units = [FakeToshiba.unit(model="3", merit="2c03")]
             entry = await add_entry(hass)
-            await hass.async_block_till_done()
-            assert fake.requests["energy"] == 1
+            # It is read by a task in the background, which nothing here waits for
+            await wait_until(lambda: fake.requests["energy"] == 1)
 
             for _ in range(10):
                 await restart(hass, entry)
 
-            assert fake.requests["energy"] == 1
             devices = await entry.runtime_data.get_devices()
+            await wait_until(lambda: devices[0].ac_energy_consumption is not None)
             assert devices[0].ac_energy_consumption.energy_wh == 2000
+            await asyncio.sleep(0.1)
+            assert fake.requests["energy"] == 1
             await unload(hass, entry)
 
     run_in_hass(scenario)
