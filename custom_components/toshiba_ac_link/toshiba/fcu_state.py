@@ -37,6 +37,9 @@ logger = logging.getLogger(__name__)
 
 _Property = t.TypeVar("_Property")
 
+# What was logged already: a property decodes its byte on every read, many per update
+_REPORTED_UNKNOWN: t.Set[t.Tuple[str, int]] = set()
+
 
 def _decode(
     field: str, mapping: t.Dict[int, _Property], raw: int, unknown: _Property
@@ -48,7 +51,9 @@ def _decode(
     try:
         return mapping[raw]
     except KeyError:
-        logger.warning(f"Unknown {field} value 0x{raw:02x}, reporting {unknown}")
+        if (field, raw) not in _REPORTED_UNKNOWN:
+            _REPORTED_UNKNOWN.add((field, raw))
+            logger.warning(f"Unknown {field} value 0x{raw:02x}, reporting {unknown}")
         return unknown
 
 

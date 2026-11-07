@@ -23,6 +23,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - A command that Toshiba accepted no longer fails in Home Assistant when the answer has an
   unexpected shape. The action used to end with a raw error, and the entity did not
   update, although the command had reached Toshiba.
+- An unknown value from a unit is now logged once per run, instead of several times for
+  each message that contains it.
 
 ## [0.1.0b4] - 2026-11-07
 

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
+from custom_components.toshiba_ac_link.toshiba import fcu_state
 from custom_components.toshiba_ac_link.toshiba.features import ToshibaAcFeatures
 from custom_components.toshiba_ac_link.toshiba.fcu_state import ToshibaAcFcuState
 from custom_components.toshiba_ac_link.toshiba.properties import (
@@ -247,3 +250,30 @@ def test_functions_depend_on_the_mode(mode, allowed) -> None:
     assert (ToshibaAcMeritA.HEATING_8C in features.for_ac_mode(mode).ac_merit_a) is (
         allowed
     )
+
+
+def test_an_unknown_byte_is_logged_once_per_value(caplog) -> None:
+    """A property is read many times per update, and each read used to log again."""
+
+    def warnings() -> list[str]:
+        return [r.getMessage() for r in caplog.records if "Unknown" in r.getMessage()]
+
+    with patch.object(fcu_state, "_REPORTED_UNKNOWN", set()):
+        state = ToshibaAcFcuState.from_hex_state("3046" + RUNNING_STATE[4:])
+        for _ in range(5):
+            assert state.ac_mode is ToshibaAcMode.NONE
+        assert len(warnings()) == 1
+        assert "AcMode value 0x46" in warnings()[0]
+
+        # Another value is news, and so is the same value of another field
+        state.update("3047" + "ff" * 17)
+        for _ in range(5):
+            assert state.ac_mode is ToshibaAcMode.NONE
+        assert len(warnings()) == 2
+        assert "AcMode value 0x47" in warnings()[1]
+
+        state.update("46" + "ff" * 18)
+        for _ in range(5):
+            assert state.ac_status is ToshibaAcStatus.NONE
+        assert len(warnings()) == 3
+        assert "AcStatus value 0x46" in warnings()[2]
