@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
@@ -88,3 +89,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> 
     if unload_ok:
         await entry.runtime_data.shutdown()
     return unload_ok
+
+
+# ---------------------------
+#   async_remove_config_entry_device
+# ---------------------------
+async def async_remove_config_entry_device(
+    _hass: HomeAssistant, entry: ToshibaConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Allow deleting a device only if it is no longer a unit of the account."""
+    if entry.state is not ConfigEntryState.LOADED:
+        return False
+    units = {device.ac_unique_id for device in entry.runtime_data.devices}
+    return not any(
+        domain == DOMAIN and unit_id in units
+        for domain, unit_id in device_entry.identifiers
+    )

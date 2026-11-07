@@ -32,6 +32,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   off. It used to send another off.
 - Turning off a switch that is already off no longer clears another function. For example,
   turning off ECO no longer ends outdoor unit silent mode.
+- A unit removed from the account can now really be deleted from its device page. Home
+  Assistant used to refuse this, although the README said to do it.
 
 ## [0.1.0b2] - 2026-11-07
 

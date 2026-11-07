@@ -80,7 +80,7 @@ rules:
     comment: Nothing needs a repair. A rejected token uses reauthentication, and a block ends by itself.
   stale-devices:
     status: todo
-    comment: A unit removed from the account stays until it is deleted by hand.
+    comment: A unit removed from the account can be deleted by hand, but is not removed automatically, although the list of units could tell.
   # Platinum
   async-dependency: done
   inject-websession: done

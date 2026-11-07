@@ -10,9 +10,10 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 import pytest
 
+from custom_components.toshiba_ac_link.const import DOMAIN
 from custom_components.toshiba_ac_link.toshiba.api import ToshibaApi
 
 from custom_components.toshiba_ac_link.toshiba.device import ToshibaAcDevice
@@ -522,5 +523,37 @@ def test_turning_off_a_switch_that_is_off_keeps_the_shared_setting(run_in_hass) 
             assert fake.requests["command"] == 3
             assert unit.ac_merit_a is ToshibaAcMeritA.OFF
             await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_only_a_device_that_left_the_account_can_be_deleted(run_in_hass) -> None:
+    """The core refuses to delete a device unless the integration agrees."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        from custom_components.toshiba_ac_link import (
+            async_remove_config_entry_device as can_remove,
+        )
+
+        async with run_fake_toshiba():
+            entry = await add_real_entry(hass)
+            registry = dr.async_get(hass)
+            current = next(
+                device
+                for device in dr.async_entries_for_config_entry(
+                    registry, entry.entry_id
+                )
+                if (DOMAIN, UNIT_ID) in device.identifiers
+            )
+            gone = registry.async_get_or_create(
+                config_entry_id=entry.entry_id, identifiers={(DOMAIN, "gone")}
+            )
+
+            assert await can_remove(hass, entry, current) is False
+            assert await can_remove(hass, entry, gone) is True
+
+            # Without the list of units nothing can be said about a device
+            await hass.config_entries.async_unload(entry.entry_id)
+            assert await can_remove(hass, entry, gone) is False
 
     run_in_hass(scenario)

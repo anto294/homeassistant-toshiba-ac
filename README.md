@@ -219,7 +219,7 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 - **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
 - **New units need a reconnect.** A unit you add to the account appears after the `reconnect` action or a restart, up to 15 minutes later.
 - **Whole degrees only.** Toshiba's protocol has no half degrees.
-- **Removed units stay.** Delete a unit that you removed from the account by hand.
+- **Removed units stay until you delete them.** After you remove a unit from the account, call the `reconnect` action or restart, up to 15 minutes later, then select **Delete** on the page of that device. A unit that is still on the account cannot be deleted.
 - **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
 
 ## Troubleshooting
