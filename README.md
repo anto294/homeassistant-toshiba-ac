@@ -6,9 +6,6 @@
 
 This integration lets you monitor and control Toshiba air conditioners with a Wi-Fi module or adapter from Home Assistant: mode, temperature, fan, vanes, power presets, comfort functions, temperatures and energy use. It uses the same cloud service and the same realtime channel as the current Toshiba app, with its own client and no other dependencies, and it is built so that restarts of Home Assistant cannot harm your Toshiba account.
 
-> [!IMPORTANT]
-> **This is a beta.** Only pre-releases exist so far, so the Marketplace shows Toshiba Link only with beta versions turned on. See [Tested units](#tested-units) for what has been tried on real hardware.
-
 > [!NOTE]
 > Toshiba Link started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac). It is a separate integration with its own `toshiba_ac_link` domain, so please report problems [here](https://github.com/anto294/homeassistant-toshiba-ac/issues), not to those projects. See [Differences from those projects](#differences-from-those-projects).
 
@@ -63,7 +60,7 @@ Since Home Assistant 2026.11, HACS is built into Home Assistant as the Marketpla
 
 [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=anto294&repository=homeassistant-toshiba-ac&category=integration)
 
-Turn on beta versions for this repository, since only pre-releases exist so far, then select **Install**, confirm, and restart Home Assistant if a repair asks you to. Otherwise the installation can fail with a 404 error in the log.
+Select **Install**, confirm, and restart Home Assistant if a repair asks you to.
 
 ### Manual
 
@@ -224,9 +221,6 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 - **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
 
 ## Troubleshooting
-
-**The Marketplace log says "Got status code 404" for `toshiba_ac_link.zip`.**
-Only pre-releases exist so far, so turn on beta versions for Toshiba Link and install again.
 
 **Home Assistant asks for the password.**
 Toshiba rejected the token, or the token expired. Send the current password once. Nothing is retried until you do.

@@ -7,6 +7,55 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-07
+
+The first stable version of Toshiba Link. It is a separate integration with its own
+`toshiba_ac_link` domain, which started from version 2026.10.0 of
+[h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac)
+and includes work from version 2026.10.0 of
+[vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac).
+
+### If you come from a beta
+
+The code is the same as 0.1.0b5, so this update changes nothing in how the integration
+works, and your entities and settings stay as they are. Beta versions no longer need to be
+turned on. The sections below list the changes of each beta.
+
+### If you install it for the first time
+
+- **It does not take over an existing installation.** Remove the old integration first, so
+  that its requests and logins stop. See "Migrating from another Toshiba integration" in
+  the README.
+- **It needs Home Assistant 2026.11.0 or later.**
+- **It is not in the Marketplace catalog yet.** Open the repository directly, with the
+  button in the README.
+- **Not everything was tried on real units.** See "Tested units" in the README, and "Known
+  limitations" for what to expect from the Toshiba cloud.
+
+### What you get compared to the projects it started from
+
+- A native client replaces the protocol library and the Azure IoT SDK. It uses the same
+  channel as the current Toshiba app, Azure Web PubSub, and HTTPS for commands.
+- Limits that protect the account and survive restarts: at most 120 requests per hour, a
+  wait of 15 minutes or more when Toshiba asks to slow down, and at most 3 failed logins per
+  hour. A restart costs one request, or two after 15 minutes. The real limits of Toshiba are
+  unknown, so these reduce the risk to an account, and cannot rule it out.
+- The password is no longer stored, and only the forms log in. Home Assistant asks for the
+  password only when Toshiba rejects the token or the token expires.
+- A command shows in Home Assistant as soon as Toshiba accepts it, and is never sent twice.
+  If a unit does not confirm it within 2 minutes, a warning is logged and the entity
+  corrects itself.
+- Units that join or leave the account appear and disappear by themselves.
+- The 8 °C mode sets a target of 8 °C when it starts, and goes back to the earlier target,
+  or to 20 °C, when it ends. Model 3 units accept up to 16 °C in this mode.
+- Turning off a switch or choosing off on a select no longer ends another function that
+  shares its setting on the unit.
+- Indoor temperature sensor, self cleaning binary sensor, wireless LED switch, and
+  horizontal swing on units with independent vanes.
+- Unexpected data from a unit or from Toshiba no longer stops the account or the realtime
+  channel.
+- The diagnostics file no longer holds the account name or the names of the units.
+
 ## [0.1.0b5] - 2026-11-07
 
 ### Changed
