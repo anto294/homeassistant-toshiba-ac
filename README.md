@@ -285,6 +285,7 @@ Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshib
 3. Install Toshiba Link and add your account.
 4. Check your automations and dashboards. Entity IDs are built from the name of each unit and the language of Home Assistant, so most stay the same, except these:
    - The energy sensor is now called `..._energy_consumption`. On the original integration it was `..._power_consumption`.
+   - The indoor temperature sensor starts disabled, because the climate entity shows the same value. If your automations or dashboards use it, enable it in the settings of the entity.
    - History stays with the old entities, because they belong to another integration.
 
 ## Differences from those projects
