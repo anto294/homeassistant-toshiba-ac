@@ -8,14 +8,24 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from toshiba_ac_community.device import ToshibaAcDevice, ToshibaAcSelfCleaning
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.properties import (
+    ToshibaAcSelfCleaning,
+)
 
+from . import ToshibaConfigEntry
 from .entity import ToshibaAcStateEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    _hass: HomeAssistant,
+    config_entry: ToshibaConfigEntry,
+    async_add_devices: AddConfigEntryEntitiesCallback,
+) -> None:
     """Add binary sensor entities for passed config_entry in HA."""
     device_manager = config_entry.runtime_data
     new_entities = []

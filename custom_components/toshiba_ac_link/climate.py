@@ -6,8 +6,10 @@ from collections.abc import Mapping
 import logging
 from typing import Any
 
-from toshiba_ac_community.device import (
-    ToshibaAcDevice,
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.properties import (
     ToshibaAcFanMode,
     ToshibaAcHorizontalSwingMode,
     ToshibaAcMeritA,
@@ -27,6 +29,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 
+from . import ToshibaConfigEntry
 from .entity import ToshibaAcStateEntity
 from .feature_list import get_feature_by_name, get_feature_list
 
@@ -67,7 +70,11 @@ SWING_TO_VERTICAL = {
 }
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    _hass: HomeAssistant,
+    config_entry: ToshibaConfigEntry,
+    async_add_devices: AddConfigEntryEntitiesCallback,
+) -> None:
     """Add climate entities for passed config_entry in HA."""
     device_manager = config_entry.runtime_data
 
@@ -97,7 +104,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
     _attr_target_temperature_step = 1
     _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
 
-    def __init__(self, toshiba_device: ToshibaAcDevice):
+    def __init__(self, toshiba_device: ToshibaAcDevice) -> None:
         """Initialize the climate."""
         super().__init__(toshiba_device)
 
@@ -119,7 +126,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         return features
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Return True if the device runs at the user's request.
 
         During self cleaning the AC reports ON, because the fan dries the heat
@@ -131,7 +138,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
             and self._device.ac_self_cleaning != ToshibaAcSelfCleaning.ON
         )
 
-    async def async_set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         set_temperature = kwargs[ATTR_TEMPERATURE]
 
@@ -190,7 +197,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
             await self._device.set_ac_power_selection(feature_list_id)
 
     @property
-    def hvac_mode(self) -> HVACMode | str | None:
+    def hvac_mode(self) -> HVACMode | None:
         """Return hvac operation ie. heat, cool mode."""
         if not self.is_on:
             return HVACMode.OFF
@@ -198,7 +205,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         return TOSHIBA_TO_HVAC_MODE[self._device.ac_mode]
 
     @property
-    def hvac_modes(self) -> list[HVACMode] | list[str]:
+    def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available hvac operation modes."""
         available_modes = [HVACMode.OFF]
         for toshiba_mode, hvac_mode in TOSHIBA_TO_HVAC_MODE.items():
@@ -217,7 +224,7 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
                 await self._device.set_ac_status(ToshibaAcStatus.ON)
             await self._device.set_ac_mode(HVAC_MODE_TO_TOSHIBA[hvac_mode])
 
-    async def async_set_fan_mode(self, fan_mode):
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
         _LOGGER.info("Toshiba Climate setting fan_mode: %s", fan_mode)
         if not self.is_on:

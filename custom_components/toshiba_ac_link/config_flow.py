@@ -10,24 +10,33 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
+import probatio
 from toshiba_ac_community.device_manager import ToshibaAcDeviceManager
 from toshiba_ac_community.utils.http_api import (
     ToshibaAcHttpApiAuthError,
     ToshibaAcHttpApiError,
 )
-import voluptuous as vol
 
 from .const import CONNECT_TIMEOUT_S, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_DATA_SCHEMA = vol.Schema(
+PASSWORD_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+
+STEP_USER_DATA_SCHEMA = probatio.Schema(
     {
-        vol.Required("username"): str,
-        vol.Required("password"): str,
+        probatio.Required("username"): TextSelector(),
+        probatio.Required("password"): PASSWORD_SELECTOR,
     }
 )
-STEP_REAUTH_DATA_SCHEMA = vol.Schema({vol.Required("password"): str})
+STEP_REAUTH_DATA_SCHEMA = probatio.Schema(
+    {probatio.Required("password"): PASSWORD_SELECTOR}
+)
 
 
 # ---------------------------

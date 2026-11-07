@@ -18,15 +18,17 @@ from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
-    ConfigEntryError,
     ConfigEntryNotReady,
     HomeAssistantError,
 )
 
 from .const import CONNECT_TIMEOUT_S, DOMAIN
 from .reconnect import ToshibaReconnectManager
+
+type ToshibaConfigEntry = ConfigEntry[ToshibaAcDeviceManager]
 
 # Monkey-patch: translate the raw Azure connection errors into something the
 # user can act on. IoT Hub allows only one active connection per device, so a
@@ -65,7 +67,8 @@ async def _patched_send_message(
         raise HomeAssistantError(CONNECTION_REFUSED_ERROR.format(err=ex)) from ex
 
 
-toshiba_amqp_api.ToshibaAcAmqpApi.send_message = _patched_send_message
+# Replacing a method is the point of this patch
+toshiba_amqp_api.ToshibaAcAmqpApi.send_message = _patched_send_message  # type: ignore[method-assign]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -84,7 +87,7 @@ _LOGGER = logging.getLogger(__name__)
 logging.getLogger("azure.iot.device").setLevel(logging.ERROR)
 
 
-def _create_device_manager(entry: ConfigEntry) -> ToshibaAcDeviceManager:
+def _create_device_manager(entry: ToshibaConfigEntry) -> ToshibaAcDeviceManager:
     """Build the device manager from the stored account and tokens.
 
     A SAS token is never reused, because it may have expired while Home Assistant
@@ -116,7 +119,7 @@ async def _async_shutdown(device_manager: ToshibaAcDeviceManager) -> None:
         _LOGGER.warning("Error while shutting down device manager: %s", ex)
 
 
-def _setup_error(ex: Exception) -> ConfigEntryError:
+def _setup_error(ex: Exception) -> HomeAssistantError:
     """Translate a connect failure into the error Home Assistant reacts to."""
     if isinstance(ex, TimeoutError):
         return ConfigEntryNotReady(
@@ -155,7 +158,7 @@ def _clear_connection_notice(hass: HomeAssistant) -> None:
     persistent_notification.async_dismiss(hass, NOTIFICATION_ID)
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
     """Register the actions, which exist even when no entry is loaded."""
 
     async def handle_reconnect(_call: ServiceCall) -> None:
@@ -168,7 +171,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
     """Set up Toshiba Link from a config entry."""
     device_manager = _create_device_manager(entry)
 
@@ -226,7 +229,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.info("Unloading Toshiba Link integration")
 

@@ -5,8 +5,10 @@ from __future__ import annotations
 from datetime import date, datetime
 import logging
 
-from toshiba_ac_community.device import (
-    ToshibaAcDevice,
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.properties import (
     ToshibaAcDeviceEnergyConsumption,
 )
 
@@ -18,15 +20,20 @@ from homeassistant.components.sensor import (
 from homeassistant.const import UnitOfEnergy, UnitOfTemperature
 from homeassistant.helpers.typing import StateType
 
+from . import ToshibaConfigEntry
 from .entity import ToshibaAcEntity, ToshibaAcStateEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    _hass: HomeAssistant,
+    config_entry: ToshibaConfigEntry,
+    async_add_devices: AddConfigEntryEntitiesCallback,
+) -> None:
     """Add sensor entities for passed config_entry in HA."""
     device_manager = config_entry.runtime_data
-    new_entities = []
+    new_entities: list[SensorEntity] = []
 
     devices: list[ToshibaAcDevice] = await device_manager.get_devices()
     for device in devices:

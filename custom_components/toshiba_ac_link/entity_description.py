@@ -4,7 +4,8 @@ from enum import Enum
 from logging import getLogger
 from typing import Generic, TypeVar
 
-from toshiba_ac_community.device import ToshibaAcDevice, ToshibaAcFeatures
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.features import ToshibaAcFeatures
 
 _LOGGER = getLogger(__name__)
 TEnum = TypeVar("TEnum", bound=Enum)
@@ -31,11 +32,13 @@ class ToshibaAcEnumEntityDescriptionMixin(Generic[TEnum]):
     def get_device_attr(self, device: ToshibaAcDevice) -> TEnum | None:
         """Return the current option enum value."""
         if self.ac_attr_name:
-            return getattr(device, self.ac_attr_name)
+            value: TEnum | None = getattr(device, self.ac_attr_name)
+            return value
         return None
 
     def get_features_attr(self, features: ToshibaAcFeatures) -> list[TEnum]:
         """Return the supported enum values."""
         if self.ac_attr_name:
-            return getattr(features, self.ac_attr_name)
+            values: list[TEnum] = getattr(features, self.ac_attr_name)
+            return values
         return []

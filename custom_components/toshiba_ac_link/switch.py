@@ -8,10 +8,12 @@ from enum import Enum
 import logging
 from typing import Any, Generic, TypeVar
 
-from toshiba_ac_community.device import (
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.features import ToshibaAcFeatures
+from toshiba_ac_community.device.properties import (
     ToshibaAcAirPureIon,
-    ToshibaAcDevice,
-    ToshibaAcFeatures,
     ToshibaAcMeritA,
     ToshibaAcStatus,
     ToshibaAcWirelessLed,
@@ -25,30 +27,31 @@ from homeassistant.components.switch import (
 
 from homeassistant.const import EntityCategory
 
+from . import ToshibaConfigEntry
 from .entity import ToshibaAcStateEntity
 from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class ToshibaAcSwitchDescription(SwitchEntityDescription):
     """Describe a Toshiba AC switch entity type."""
 
     device_class = SwitchDeviceClass.SWITCH
     requires_ac_on: bool = True
 
-    async def async_turn_on(self, _device: ToshibaAcDevice):
+    async def async_turn_on(self, _device: ToshibaAcDevice) -> None:
         """Turn the switch on."""
 
-    async def async_turn_off(self, _device: ToshibaAcDevice):
+    async def async_turn_off(self, _device: ToshibaAcDevice) -> None:
         """Turn the switch off."""
 
-    def is_on(self, _device: ToshibaAcDevice):
+    def is_on(self, _device: ToshibaAcDevice) -> bool:
         """Return True if the switch is on."""
         return False
 
-    def is_supported(self, _features: ToshibaAcFeatures):
+    def is_supported(self, _features: ToshibaAcFeatures) -> bool:
         """
         Return True if the switch is available.
 
@@ -57,7 +60,7 @@ class ToshibaAcSwitchDescription(SwitchEntityDescription):
         """
         return False
 
-    def is_supported_by(self, device: ToshibaAcDevice):
+    def is_supported_by(self, device: ToshibaAcDevice) -> bool:
         """Return True if the device supports this switch, when creating entities."""
         return self.is_supported(device.supported)
 
@@ -65,7 +68,7 @@ class ToshibaAcSwitchDescription(SwitchEntityDescription):
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class ToshibaAcEnumSwitchDescription(
     ToshibaAcSwitchDescription,
     ToshibaAcEnumEntityDescriptionMixin[TEnum],
@@ -78,44 +81,44 @@ class ToshibaAcEnumSwitchDescription(
     ac_attr_name: str = ""
     ac_attr_setter: str = ""
 
-    async def async_turn_off(self, device: ToshibaAcDevice):
+    async def async_turn_off(self, device: ToshibaAcDevice) -> None:
         """Turn the switch off."""
         await self.async_set_attr(device, self.ac_off_value)
 
-    async def async_turn_on(self, device: ToshibaAcDevice):
+    async def async_turn_on(self, device: ToshibaAcDevice) -> None:
         """Turn the switch on."""
         await self.async_set_attr(device, self.ac_on_value)
 
-    def is_on(self, device: ToshibaAcDevice):
+    def is_on(self, device: ToshibaAcDevice) -> bool:
         """Return True if the switch is on."""
         return self.get_device_attr(device) == self.ac_on_value
 
-    def is_supported(self, features: ToshibaAcFeatures):
+    def is_supported(self, features: ToshibaAcFeatures) -> bool:
         """Return True if the switch is available."""
         return self.ac_on_value in self.get_features_attr(features)
 
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class ToshibaAcWirelessLedSwitchDescription(ToshibaAcSwitchDescription):
     """Describe the switch of the wireless LED."""
 
-    async def async_turn_on(self, device: ToshibaAcDevice):
+    async def async_turn_on(self, device: ToshibaAcDevice) -> None:
         """Turn the LED on."""
         await device.set_ac_wireless_led(ToshibaAcWirelessLed.ON)
 
-    async def async_turn_off(self, device: ToshibaAcDevice):
+    async def async_turn_off(self, device: ToshibaAcDevice) -> None:
         """Turn the LED off."""
         await device.set_ac_wireless_led(ToshibaAcWirelessLed.OFF)
 
-    def is_on(self, device: ToshibaAcDevice):
+    def is_on(self, device: ToshibaAcDevice) -> bool:
         """Return True if the LED is on."""
         return device.ac_wireless_led == ToshibaAcWirelessLed.ON
 
-    def is_supported(self, _features: ToshibaAcFeatures):
+    def is_supported(self, _features: ToshibaAcFeatures) -> bool:
         """Return True, because the features do not list the LED."""
         return True
 
-    def is_supported_by(self, device: ToshibaAcDevice):
+    def is_supported_by(self, device: ToshibaAcDevice) -> bool:
         """Return True if the unit reports the LED: no report means there is none."""
         return device.ac_wireless_led is not ToshibaAcWirelessLed.NONE
 
@@ -158,7 +161,11 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
 ]
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    _hass: HomeAssistant,
+    config_entry: ToshibaConfigEntry,
+    async_add_devices: AddConfigEntryEntitiesCallback,
+) -> None:
     """Add switch entities for passed config_entry in HA."""
     device_manager = config_entry.runtime_data
     new_entities = []
@@ -188,7 +195,7 @@ class ToshibaAcSwitchEntity(ToshibaAcStateEntity, SwitchEntity):
 
     def __init__(
         self, device: ToshibaAcDevice, entity_description: ToshibaAcSwitchDescription
-    ):
+    ) -> None:
         """Initialize the switch."""
         super().__init__(device)
 
@@ -197,7 +204,7 @@ class ToshibaAcSwitchEntity(ToshibaAcStateEntity, SwitchEntity):
         self.update_attrs()
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """Return True if entity is available."""
         if not self.entity_description.requires_ac_on:
             return super().available
@@ -212,12 +219,13 @@ class ToshibaAcSwitchEntity(ToshibaAcStateEntity, SwitchEntity):
     @property
     def is_on(self) -> bool | None:
         """Return True if the switch is on."""
-        return self.entity_description.is_on(self._device)
+        is_on: bool = self.entity_description.is_on(self._device)
+        return is_on
 
-    async def async_turn_off(self, **kwargs: Any):
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         await self.entity_description.async_turn_off(self._device)
 
-    async def async_turn_on(self, **kwargs: Any):
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         await self.entity_description.async_turn_on(self._device)

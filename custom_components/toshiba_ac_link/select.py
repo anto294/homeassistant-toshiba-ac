@@ -8,15 +8,18 @@ from enum import Enum
 import logging
 from typing import Generic, TypeVar
 
-from toshiba_ac_community.device import (
-    ToshibaAcDevice,
-    ToshibaAcFeatures,
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from toshiba_ac_community.device import ToshibaAcDevice
+from toshiba_ac_community.device.features import ToshibaAcFeatures
+from toshiba_ac_community.device.properties import (
     ToshibaAcMeritA,
     ToshibaAcMeritB,
 )
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 
+from . import ToshibaConfigEntry
 from .entity import ToshibaAcStateEntity
 from .entity_description import ToshibaAcEnumEntityDescriptionMixin
 
@@ -25,11 +28,13 @@ _LOGGER = logging.getLogger(__name__)
 TEnum = TypeVar("TEnum", bound=Enum)
 
 
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class ToshibaAcSelectDescription(SelectEntityDescription):
     """Describe a Toshiba AC select entity type."""
 
-    async def async_select_option_name(self, device: ToshibaAcDevice, name: str):
+    async def async_select_option_name(
+        self, device: ToshibaAcDevice, name: str
+    ) -> None:
         """Select the provided option."""
         pass
 
@@ -41,7 +46,7 @@ class ToshibaAcSelectDescription(SelectEntityDescription):
         """Return the available options for given Toshiba AC device features."""
         return []
 
-    def is_supported(self, _features: ToshibaAcFeatures):
+    def is_supported(self, _features: ToshibaAcFeatures) -> bool:
         """
         Return True if the select is available.
 
@@ -51,10 +56,7 @@ class ToshibaAcSelectDescription(SelectEntityDescription):
         return False
 
 
-TEnum = TypeVar("TEnum", bound=Enum)
-
-
-@dataclass(kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class ToshibaAcEnumSelectDescription(
     ToshibaAcSelectDescription,
     ToshibaAcEnumEntityDescriptionMixin[TEnum],
@@ -67,7 +69,9 @@ class ToshibaAcEnumSelectDescription(
     off_value: TEnum | None = None
     values: list[TEnum] = field(default_factory=list)
 
-    async def async_select_option_name(self, device: ToshibaAcDevice, name: str):
+    async def async_select_option_name(
+        self, device: ToshibaAcDevice, name: str
+    ) -> None:
         """Select a given option."""
         for value in self.values:
             if value.name.lower() == name:
@@ -83,16 +87,16 @@ class ToshibaAcEnumSelectDescription(
             return self.off_value.name.lower()
         return None
 
-    def get_option_names(self, features: ToshibaAcFeatures):
+    def get_option_names(self, features: ToshibaAcFeatures) -> list[str]:
         """Return the available options for given Toshiba AC device features."""
         return [v.name.lower() for v in self.get_option_values(features)]
 
-    def get_option_values(self, features: ToshibaAcFeatures):
+    def get_option_values(self, features: ToshibaAcFeatures) -> list[TEnum]:
         """Return all the supported option enum values."""
         values = self.get_features_attr(features)
         return [v for v in self.values if v in values]
 
-    def is_supported(self, features: ToshibaAcFeatures):
+    def is_supported(self, features: ToshibaAcFeatures) -> bool:
         """Return True if the switch is available."""
         options = self.get_option_values(features)
         if self.off_value is not None and self.off_value in options:
@@ -126,7 +130,11 @@ _SELECT_DESCRIPTIONS: Sequence[ToshibaAcSelectDescription] = [
 ]
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    _hass: HomeAssistant,
+    config_entry: ToshibaConfigEntry,
+    async_add_devices: AddConfigEntryEntitiesCallback,
+) -> None:
     """Add select entities for passed config_entry in HA."""
     device_manager = config_entry.runtime_data
     new_entities = []
@@ -156,7 +164,7 @@ class ToshibaAcSelectEntity(ToshibaAcStateEntity, SelectEntity):
 
     def __init__(
         self, device: ToshibaAcDevice, entity_description: ToshibaAcSelectDescription
-    ):
+    ) -> None:
         """Initialize the ToshibaAcSelectEntity."""
         super().__init__(device)
         self._attr_unique_id = f"{device.ac_unique_id}_{entity_description.key}"
@@ -167,7 +175,7 @@ class ToshibaAcSelectEntity(ToshibaAcStateEntity, SelectEntity):
         """Select a given option."""
         await self.entity_description.async_select_option_name(self._device, option)
 
-    def update_attrs(self):
+    def update_attrs(self) -> None:
         """Update the entity's attributes."""
         features = self._device.supported.for_ac_mode(self._device.ac_mode)
         self._attr_options = self.entity_description.get_option_names(features)

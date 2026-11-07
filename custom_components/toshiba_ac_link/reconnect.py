@@ -70,7 +70,8 @@ class ToshibaReconnectManager:
             if amqp_api and amqp_api.device is client and not client.connected:
                 self._hass.loop.call_soon_threadsafe(self._schedule_reload)
 
-        client.on_connection_state_change = on_connection_state_change
+        # The Azure client calls this without arguments, but declares one
+        client.on_connection_state_change = on_connection_state_change  # type: ignore[assignment]
 
     def recovered(self, device_manager: ToshibaAcDeviceManager) -> None:
         """Cancel a pending reload after the client reconnected by itself."""
