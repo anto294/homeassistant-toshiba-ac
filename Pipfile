@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = ">=25.1"
+flake8 = ">=7.2"
+mypy = ">=1.15"
+pytest = ">=8.3"
+pytest-asyncio = ">=1.0"
+wheel = ">=0.45"
+pygithub = ">=2.6"
+homeassistant = ">=2026.11.0"
+azure-iot-device = "==2.15.0rc1"
+toshiba-ac = "==0.3.13"
+janus = "==1.0.0"
+
+
+[packages]

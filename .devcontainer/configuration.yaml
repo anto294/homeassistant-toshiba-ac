@@ -1,8 +1,0 @@
-default_config:
-
-debugpy:
-
-logger:
-  default: error
-  logs:
-    custom_components.toshiba_ac: debug
