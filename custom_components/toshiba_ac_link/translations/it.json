@@ -82,7 +82,7 @@
   "services": {
     "reconnect": {
       "name": "Riconnetti",
-      "description": "Crea una nuova connessione al cloud Toshiba per tutte le voci. Usala dopo aver chiuso un'altra connessione allo stesso account."
+      "description": "Crea una nuova connessione al cloud Toshiba per tutte le voci. Usala per aggiungere una nuova unità, fino a 15 minuti dopo averla aggiunta all'account."
     }
   }
 }

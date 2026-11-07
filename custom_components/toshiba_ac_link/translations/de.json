@@ -82,7 +82,7 @@
   "services": {
     "reconnect": {
       "name": "Neu verbinden",
-      "description": "Stellt für alle Einträge eine neue Verbindung zur Toshiba-Cloud her. Verwende dies, nachdem du eine andere Verbindung zum selben Konto geschlossen hast."
+      "description": "Stellt für alle Einträge eine neue Verbindung zur Toshiba-Cloud her. Verwende dies, um ein neues Gerät zu übernehmen, bis zu 15 Minuten nachdem es dem Konto hinzugefügt wurde."
     }
   }
 }

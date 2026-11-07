@@ -104,7 +104,7 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reauth(
         self, _entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
-        """Start reauthentication after the stored password stopped working."""
+        """Start reauthentication after the stored token stopped working."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(

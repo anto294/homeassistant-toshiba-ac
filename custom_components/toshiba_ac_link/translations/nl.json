@@ -82,7 +82,7 @@
   "services": {
     "reconnect": {
       "name": "Opnieuw verbinden",
-      "description": "Maakt voor alle items een nieuwe verbinding met de Toshiba-cloud. Gebruik dit nadat je een andere verbinding met hetzelfde account hebt gesloten."
+      "description": "Maakt voor alle items een nieuwe verbinding met de Toshiba-cloud. Gebruik dit om een nieuwe unit op te nemen, tot 15 minuten nadat deze aan het account is toegevoegd."
     }
   }
 }

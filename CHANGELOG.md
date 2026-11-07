@@ -36,6 +36,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   Assistant used to refuse this, although the README said to do it.
 - Every refused login now counts toward the limit of 3 failed logins per hour, not only
   those that name a wrong password.
+- The description of the reconnect action now says what it is for, and no longer mentions
+  closing another connection.
 
 ### Security
 

@@ -61,7 +61,10 @@ sequenceDiagram
 | `/api/AC/GetGroupACEnergyConsumption` | POST | At most hourly, only if a unit reports energy |
 
 All requests carry a `Device-ID` header, from the device id in the entry, and an empty
-`User-Agent`. None is ever retried automatically. A failure waits for the next turn.
+`User-Agent`. The client never repeats a request: a failure waits for the next turn.
+The Home Assistant core does retry a setup that failed, with growing waits of up to 10
+minutes, or the longer `retry_after` that a block sets. Every such attempt still passes
+the limits below.
 
 The login, the list of units and the socket were confirmed on two real accounts, and
 commands on one real unit of model 2. The command endpoint was found through

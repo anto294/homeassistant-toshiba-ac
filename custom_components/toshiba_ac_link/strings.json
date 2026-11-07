@@ -82,7 +82,7 @@
   "services": {
     "reconnect": {
       "name": "Reconnect",
-      "description": "Makes a new connection to the Toshiba cloud for all entries. Use it after closing another connection to the same account."
+      "description": "Makes a new connection to the Toshiba cloud for all entries. Use it to pick up a new unit, up to 15 minutes after adding it to the account."
     }
   }
 }
