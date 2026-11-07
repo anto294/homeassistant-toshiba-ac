@@ -1,89 +1,267 @@
-[![HACS Validate](https://github.com/h4de5/home-assistant-toshiba_ac/actions/workflows/validate.yml/badge.svg)](https://github.com/h4de5/home-assistant-toshiba_ac/actions/workflows/validate.yml)
-[![hassfest Validate](https://github.com/h4de5/home-assistant-toshiba_ac/actions/workflows/hassfest.yml/badge.svg)](https://github.com/h4de5/home-assistant-toshiba_ac/actions/workflows/hassfest.yml)
-[![Github Release](https://img.shields.io/github/release/h4de5/home-assistant-toshiba_ac.svg)](https://github.com/h4de5/home-assistant-toshiba_ac/releases)
-[![Github Commit since](https://img.shields.io/github/commits-since/h4de5/home-assistant-toshiba_ac/latest?sort=semver)](https://github.com/h4de5/home-assistant-toshiba_ac/releases)
-[![Github Open Issues](https://img.shields.io/github/issues/h4de5/home-assistant-toshiba_ac.svg)](https://github.com/h4de5/home-assistant-toshiba_ac/issues)
-[![Github Open Pull Requests](https://img.shields.io/github/issues-pr/h4de5/home-assistant-toshiba_ac.svg)](https://github.com/h4de5/home-assistant-toshiba_ac/pulls)
+# Toshiba Link for Home Assistant
 
-# Toshiba - Air conditioning
+[![GitHub release](https://img.shields.io/github/v/release/anto294/homeassistant-toshiba-ac?style=plastic)](https://github.com/anto294/homeassistant-toshiba-ac/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/anto294/homeassistant-toshiba-ac/ci.yml?style=plastic)](https://github.com/anto294/homeassistant-toshiba-ac/actions)
+![Downloads](https://img.shields.io/github/downloads/anto294/homeassistant-toshiba-ac/total?style=plastic)
 
-Toshiba AC integration into home-assistant.io
+This integration lets you monitor and control Toshiba air conditioners with a Wi-Fi module or adapter from Home Assistant: mode, temperature, fan, vanes, power presets, comfort functions, temperatures and energy use. It uses the same cloud service as the Toshiba app, and updates arrive as soon as the unit reports them.
+
+> [!NOTE]
+> Toshiba Link started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac). It is a separate integration with its own `toshiba_ac_link` domain, so please report problems [here](https://github.com/anto294/homeassistant-toshiba-ac/issues), not to those projects. See [Differences from those projects](#differences-from-those-projects).
+
+## Contents
+
+- [What you can do with it](#what-you-can-do-with-it)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Entities](#entities)
+- [How data is updated](#how-data-is-updated)
+- [Actions](#actions)
+- [Automation examples](#automation-examples)
+- [Supported devices](#supported-devices)
+- [Known limitations](#known-limitations)
+- [Troubleshooting](#troubleshooting)
+- [Removal](#removal)
+- [Translations](#translations)
+- [Migrating from another Toshiba integration](#migrating-from-another-toshiba-integration)
+- [Differences from those projects](#differences-from-those-projects)
+- [Documentation for developers](#documentation-for-developers)
+- [Quality scale](#quality-scale)
+- [Credits and license](#credits-and-license)
+
+## What you can do with it
+
+- **Automate comfort:** heat the living room before you get home, or turn everything off when the last person leaves.
+- **Protect an empty home:** turn on the 8 °C mode from an automation when you leave for the winter.
+- **Keep nights quiet:** set the outdoor unit to silent mode at bedtime.
+- **Follow energy use:** add each unit to the Energy dashboard, if the unit reports its consumption.
 
 ## Requirements
 
-You need a supported (or compatible) Toshiba AC device with either a built-in Wifi module or an adapter. See [list of compatible devices](#compatible-devices)
+| Component | Minimum version |
+|---|---|
+| Home Assistant | 2026.11.0 |
+
+You also need:
+
+- A Toshiba unit that works with the Toshiba app, through a built-in Wi-Fi module or an adapter.
+- The account you use in the app. Add new units in the app: this integration cannot do it.
+- Internet access. The units only talk to the Toshiba cloud, so this integration cannot work on the local network alone.
 
 ## Installation
 
-### Installation with HACS
+### Marketplace (recommended)
 
-- In HACS go to integrations and search for 'Toshiba AC'
-- Click `Install`
-- Reboot Home Assistant
-- Follow common integration manual
+Since Home Assistant 2026.11, HACS is built into Home Assistant as the Marketplace. Toshiba Link is not listed in its catalog yet, so open it directly:
 
-### or: Manual installation
+[![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=anto294&repository=homeassistant-toshiba-ac&category=integration)
 
-- Download [latest release](https://github.com/h4de5/home-assistant-toshiba_ac/releases)
-- Create a folder: `custom_components` in your home-assistant config directory
-- Extract content (the folder `toshiba_ac`) of the release zip into the newly created directory
-- Reboot Home Assistant
-- Follow common integration manual
+Select **Install**, confirm, and restart Home Assistant if a repair asks you to.
 
-### Common manual to activate the integration
+### Manual
 
-- The integration should be available as `Toshiba AC` in the `Add integration dialog`
-- You need to enter your Toshiba AC account credentials (same as within the app)
-- There is no bounding/registering of new AC units possible with this code - please continue to use the app for this
+Download `toshiba_ac_link.zip` from the [latest release](https://github.com/anto294/homeassistant-toshiba-ac/releases/latest), extract it into `config/custom_components/toshiba_ac_link/` and restart Home Assistant.
+
+### Updating
+
+The Marketplace offers a new version as an update under **Settings → Updates**. After you install it, restart Home Assistant. After a manual installation, replace the contents of the folder and restart.
+
+## Configuration
+
+Go to **Settings → Devices & services → Add integration** and search for **Toshiba Link**.
+
+| Field | Description |
+|---|---|
+| Username | The account you use in the Toshiba app |
+| Password | The password of that account |
+
+Each account can be added once. There are no other options.
+
+> [!IMPORTANT]
+> Toshiba allows **one active connection per account**. If another Home Assistant, or another Toshiba integration, uses the same account, connections get refused, with an error that looks like a wrong password. See [Troubleshooting](#troubleshooting).
+
+When the password stops working, Home Assistant asks for the new one under **Settings → Devices & services**.
+
+## Entities
+
+Each unit becomes a device. An entity only exists if the unit has the function.
+
+| Entity | Type | Notes |
+|---|---|---|
+| *(device name)* | Climate | Mode, target temperature, fan, vertical swing, power preset. Horizontal swing on units with independent vanes |
+| Indoor temperature | Sensor | |
+| Outdoor temperature | Sensor | Unavailable while the outdoor unit reports nothing |
+| Energy consumption | Sensor | In Wh since the start of the year. Works with the Energy dashboard |
+| Self cleaning | Binary sensor | On while the unit is cleaning itself. The climate entity shows off during this time, as the app does |
+| Outdoor unit silent mode | Select | Off, Silent 1, Silent 2 |
+| Fireplace mode | Select | Off, Fireplace 1, Fireplace 2 |
+| 8 °C mode | Switch | Frost protection, with a target of 5 to 13 °C, or to 16 °C on model 3 units |
+| Air purifier | Switch | |
+| ECO mode | Switch | |
+| High power mode | Switch | |
+| Wireless LED | Switch | Configuration entity, also works while the unit is off |
+
+Outside the 8 °C mode, the target temperature goes from 17 to 30 °C. Except for the wireless LED, switches and selects are unavailable when they do not apply, such as while the unit is off or in a mode that does not allow them.
+
+## How data is updated
+
+| Data | How | When |
+|---|---|---|
+| State of the unit | Pushed by the Toshiba cloud | When it changes |
+| State of the unit, full refresh | Fetched by the library | Every 30 minutes |
+| Energy consumption | Fetched by the library | Every hour |
+
+A stored access token avoids a new login at each restart, because Toshiba limits logins strictly. If the connection is lost and does not come back within 30 seconds, the integration reloads by itself.
+
+## Actions
+
+| Action | Description |
+|---|---|
+| `toshiba_ac_link.reconnect` | Makes a new connection to the Toshiba cloud for all entries. Use it after closing another connection to the same account, or to pick up a new unit |
+
+All other control goes through the standard actions of the entities, such as `climate.set_temperature`.
+
+## Automation examples
+
+Turn on heating before you get home:
+
+```yaml
+automation:
+  - alias: "Heat the living room on the way home"
+    triggers:
+      - trigger: state
+        entity_id: person.me
+        to: "home"
+    actions:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.living_room
+        data:
+          hvac_mode: heat
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.living_room
+        data:
+          temperature: 21
+```
+
+Keep the outdoor unit quiet at night:
+
+```yaml
+automation:
+  - alias: "Quiet outdoor unit at night"
+    triggers:
+      - trigger: time
+        at: "22:30:00"
+    actions:
+      - action: select.select_option
+        target:
+          entity_id: select.living_room_outdoor_unit_silent_mode
+        data:
+          option: cdu_silent_1
+```
+
+## Supported devices
+
+If your unit works with the [Toshiba Home AC Control](https://play.google.com/store/apps/details?id=com.toshibatctc.SmartAC) app, it has a good chance of working here. Users of the original project keep a [list of tested hardware](https://github.com/h4de5/home-assistant-toshiba_ac/issues/45).
+
+> [!WARNING]
+> **North American units do not work.** Toshiba sells them with a different app and system. [midea-ac-py](https://github.com/mill1000/midea-ac-py) may be able to control them.
+
+## Known limitations
+
+- **It needs the cloud.** No internet or a Toshiba outage means no control. There is no local mode.
+- **One connection per account.** A second client takes the connection away from the first.
+- **Toshiba limits requests.** Restarting Home Assistant repeatedly makes login problems worse.
+- **New units need a reconnect.** A unit you add to the account appears after the `reconnect` action or a restart.
+- **Removed units stay.** Delete a unit that you removed from the account by hand.
+- **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
 
 ## Troubleshooting
 
-### Setup Tips
+**"Toshiba refused the cloud connection", or "Credentials invalid".**
+Your password is probably fine. Another client holds the single connection of the account: another Home Assistant, another Toshiba integration, or the app. Close it, then call `toshiba_ac_link.reconnect`.
 
-- **Avoid long or complex passwords**: Some users report issues with passwords that are too long or contain special characters. If you have trouble setting up, try using a simpler password in the Toshiba app first.
-- **Use the official app first**: Make sure your AC unit is properly set up and working in the official Toshiba app before adding it to Home Assistant.
+**Setup fails after a restart.**
+The Toshiba cloud may be unavailable, or may be limiting requests. Home Assistant keeps retrying by itself, so do not restart it again: wait an hour or two. Check that the app works in the meantime.
 
-### Connection Issues
+**The form says "Invalid username or password".**
+Check that you can log in to the app. Some users report problems with long passwords or special characters. Avoid repeated attempts, because Toshiba counts failed logins toward an account lockout.
 
-Most connection problems are caused by **Toshiba's cloud service being temporarily unavailable**.
+**Entities are unavailable just after setup.**
+An outdoor temperature or a switch can stay unavailable while the unit is off, because it sends nothing. This is normal.
 
-**Important:**
-- A single failed setup after a Home Assistant restart is **not a bug** - the cloud may just be temporarily unreachable
-- **Do NOT restart Home Assistant repeatedly** - this will trigger rate limiting on Toshiba's servers and make things worse
-- **Best approach:** Wait 1-2 hours and try again
+**The energy sensor shows unknown.**
+It updates once an hour, and only on units that report consumption.
 
-If you continue to have issues:
-1. Enable debug logging (see below)
-2. Check if the official Toshiba app works
-3. Wait and retry after some time
-
-### Debug Logging
-
-Add this to your `configuration.yaml` to enable detailed logging:
+To collect details, add this to `configuration.yaml` and restart:
 
 ```yaml
 logger:
   default: warning
   logs:
-    custom_components.toshiba_ac: debug
-    toshiba_ac: debug
+    custom_components.toshiba_ac_link: debug
+    toshiba_ac_community: debug
 ```
 
-### Reporting Issues
+Then [open an issue](https://github.com/anto294/homeassistant-toshiba-ac/issues), with the file from **Download diagnostics** in the menu of the entry. That file does not contain your account, password or tokens, but debug logs can, so check them before you share them. Problems in how the unit or the cloud behaves may belong to [the protocol library](https://github.com/vmvelev/Toshiba-AC-control/issues).
 
-- **Home Assistant integration issues**: [Open an issue here](https://github.com/h4de5/home-assistant-toshiba_ac/issues)
-- **API/Device communication issues**: [Open an issue at the API repository](https://github.com/KaSroka/Toshiba-AC-control/issues)
+## Removal
 
-## Compatible devices
+1. In **Settings → Devices & services → Toshiba Link**, open the three-dot menu of the entry and select **Delete**. This also removes its devices and entities.
+2. In **Settings → Marketplace**, open **Toshiba Link**, then three-dot menu → **Uninstall**, and confirm. After a manual installation, delete `config/custom_components/toshiba_ac_link/` instead.
+3. Restart Home Assistant if a repair asks you to. After a manual installation, always restart it.
 
-If your device is compatible with the [official Toshiba AC mobile app](https://play.google.com/store/apps/details?id=jp.co.toshiba_carrier.ac_control) or [Toshiba Home AC Control](https://play.google.com/store/apps/details?id=com.toshibatctc.SmartAC) it has good chances to be supported by this integration. Furthermore it has been tested with the following hardware: [List of Supported Devices](https://github.com/h4de5/home-assistant-toshiba_ac/issues/45) - feel free to update that list!
+Remove automations, scripts and dashboards that use these entities yourself. Long-term statistics stay until you delete them in **Developer tools → Statistics**.
 
-> **⚠️ North America Users:** Toshiba distributes their AC devices with a **completely different app and system** in the US: [Toshiba AC NA](https://play.google.com/store/apps/details?id=com.midea.toshiba&hl=de_AT). **This integration will NOT work with North American devices.** Instead, try [midea-ac-py](https://github.com/mill1000/midea-ac-py) which may be able to control NA-edition AC units without requiring an account.
+## Translations
 
+The integration is available in English, German, Dutch and Italian. To add a language, copy `translations/en.json` to a new file named after the language code, and open a pull request. A test checks that each language has every text.
 
-## More links and resources
+## Migrating from another Toshiba integration
 
-- Feature Request in the [home-assistant community](https://community.home-assistant.io/t/toshiba-home-ac-control/137698)
-- my first draft to communicate with the rest service using an [Toshiba API client in PHP](https://gist.github.com/h4de5/7f97db0f4efc265e48904d4a84dab4fb)
-- extended example to retrieve state of the AC unit and update the timeprogram using an [Toshiba API client in python](https://github.com/h4de5/home-assistant-toshiba_ac/tree/keep-http-api/custom_components/toshiba_ac/toshiba_ac_api)
-- finally using AMQP interface to send state changes directly in [updated python package](https://github.com/KaSroka/Toshiba-AC-control)
+Toshiba Link uses its own domain, so it installs next to `toshiba_ac` or `toshiba_ac_community` and does not take over their entries. Because of the single connection, do not run them on the same account at once:
+
+1. Note the entity IDs that your automations and dashboards use.
+2. Delete the entry of the old integration, so that its connection closes, and uninstall it.
+3. Install Toshiba Link and add your account.
+4. Check your automations and dashboards. Entity IDs are built from the name of each unit, so most stay the same, except these:
+   - The energy sensor is now called `..._energy_consumption`. On the original integration it was `..._power_consumption`.
+   - History stays with the old entities, because they belong to another integration.
+
+## Differences from those projects
+
+| | Toshiba Link | [h4de5](https://github.com/h4de5/home-assistant-toshiba_ac) | [vmvelev](https://github.com/vmvelev/home-assistant-toshiba_ac) |
+|---|---|---|---|
+| Domain | `toshiba_ac_link` | `toshiba_ac` | `toshiba_ac_community` |
+| Protocol library | `toshiba-ac-community` | `toshiba-ac` | `toshiba-ac-community` |
+| Reauthentication, stored access token, reload after a lost connection | Yes | No | Yes |
+| Notice about the single connection | Yes | Yes | No |
+| Indoor temperature, self cleaning, wireless LED, horizontal swing | Yes | No | Yes |
+| Tests on a real Home Assistant, in CI | Yes | No | No |
+| Minimum Home Assistant | 2026.11.0 | 2025.3.0 | 2025.3.0 |
+
+## Documentation for developers
+
+- [Architecture](docs/codebase-architecture.md)
+- [Authentication](docs/authentication.md)
+
+## Quality scale
+
+Home Assistant grades the integrations in its core with the [Integration Quality Scale](https://contributors.home-assistant.io/core/quality-scale/). It does not review custom integrations, so Toshiba Link has no official tier. This project follows those rules as a goal, and this is its own assessment. [`quality_scale.yaml`](custom_components/toshiba_ac_link/quality_scale.yaml) holds the state of each rule.
+
+| Tier | Rules | Met | Not applicable | Not met |
+|---|---:|---:|---:|---:|
+| Bronze | 20 | 17 | 3 | 0 |
+| Silver | 10 | 8 | 1 | 1 |
+| Gold | 21 | 13 | 2 | 6 |
+| Platinum | 3 | 2 | 0 | 1 |
+
+A tier needs every rule of that tier and the ones below it, so this project meets Bronze, and does not claim the others yet.
+
+## Credits and license
+
+This project started as a fork of [h4de5/home-assistant-toshiba_ac](https://github.com/h4de5/home-assistant-toshiba_ac), created by h4de5 and its contributors, and includes work from [vmvelev/home-assistant-toshiba_ac](https://github.com/vmvelev/home-assistant-toshiba_ac) by Venelin Velev. The communication with the cloud is done by [toshiba-ac-community](https://github.com/vmvelev/Toshiba-AC-control), a fork of [KaSroka/Toshiba-AC-control](https://github.com/KaSroka/Toshiba-AC-control). Thanks to all of them.
+
+Distributed under the [GNU General Public License v3.0](LICENSE), like the projects it comes from.
