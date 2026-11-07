@@ -9,6 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 TO_REDACT = {
+    "title",
+    "unique_id",
     "username",
     "password",
     "sas_token",
