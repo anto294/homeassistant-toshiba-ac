@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from toshiba_ac_community.device import ToshibaAcDevice
+from .toshiba.device import ToshibaAcDevice
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
@@ -40,11 +40,7 @@ class ToshibaAcEntity(Entity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return bool(
-            self._device.ac_id
-            and self._device.amqp_api.sas_token
-            and self._device.http_api.access_token
-        )
+        return bool(self._device.ac_id and self._device.connected)
 
 
 # ---------------------------

@@ -7,8 +7,8 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from toshiba_ac_community.device import ToshibaAcDevice
-from toshiba_ac_community.device.properties import (
+from .toshiba.device import ToshibaAcDevice
+from .toshiba.properties import (
     ToshibaAcDeviceEnergyConsumption,
 )
 

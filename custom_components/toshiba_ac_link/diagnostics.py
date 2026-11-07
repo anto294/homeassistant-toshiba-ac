@@ -41,6 +41,8 @@ async def async_get_config_entry_diagnostics(
         diagnostics_data["error"] = "Device manager not found"
         return diagnostics_data
 
+    diagnostics_data["client"] = device_manager.diagnostics()
+
     try:
         devices = await device_manager.get_devices()
         devices_data = []

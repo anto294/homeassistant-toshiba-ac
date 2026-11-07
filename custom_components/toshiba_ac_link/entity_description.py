@@ -4,8 +4,8 @@ from enum import Enum
 from logging import getLogger
 from typing import Generic, TypeVar
 
-from toshiba_ac_community.device import ToshibaAcDevice
-from toshiba_ac_community.device.features import ToshibaAcFeatures
+from .toshiba.device import ToshibaAcDevice
+from .toshiba.features import ToshibaAcFeatures
 
 _LOGGER = getLogger(__name__)
 TEnum = TypeVar("TEnum", bound=Enum)

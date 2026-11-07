@@ -1,87 +1,88 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Dit Toshiba-account is al geconfigureerd",
-            "reauth_successful": "Herauthenticatie geslaagd"
-        },
-        "error": {
-            "cannot_connect": "Kan niet verbinden",
-            "invalid_auth": "Ongeldige gebruikersnaam of wachtwoord",
-            "unknown": "Onverwachte fout"
-        },
-        "step": {
-            "user": {
-                "description": "Voer het account in dat je in de Toshiba-app gebruikt.",
-                "data": {
-                    "username": "Gebruikersnaam",
-                    "password": "Wachtwoord"
-                }
-            },
-            "reauth_confirm": {
-                "description": "De inloggegevens voor {username} zijn niet langer geldig. Voer het huidige wachtwoord in om opnieuw verbinding te maken.",
-                "data": {
-                    "password": "Wachtwoord"
-                }
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "Dit Toshiba-account is al geconfigureerd",
+      "reauth_successful": "Herauthenticatie geslaagd"
     },
-    "entity": {
-        "select": {
-            "cdu_silent": {
-                "name": "Buitenunit stille mode",
-                "state": {
-                    "off": "Uit",
-                    "cdu_silent_1": "Stille modus 1",
-                    "cdu_silent_2": "Stille modus 2"
-                }
-            },
-            "fireplace": {
-                "name": "Openhaard modus",
-                "state": {
-                    "off": "Uit",
-                    "fireplace_1": "Openhaard 1",
-                    "fireplace_2": "Openhaard 2"
-                }
-            }
-        },
-        "sensor": {
-            "outdoor_temperature": {
-                "name": "Buitentemperatuur"
-            },
-            "energy_consumption": {
-                "name": "Energieverbruik"
-            },
-            "indoor_temperature": {
-                "name": "Binnentemperatuur"
-            }
-        },
-        "switch": {
-            "8_degc_mode": {
-                "name": "8 °C modus"
-            },
-            "air_purifier": {
-                "name": "Luchtzuivering"
-            },
-            "eco_mode": {
-                "name": "ECO modus"
-            },
-            "high_power_mode": {
-                "name": "High Power modus"
-            },
-            "wireless_led": {
-                "name": "Draadloze led"
-            }
-        },
-        "binary_sensor": {
-            "self_cleaning": {
-                "name": "Zelfreiniging"
-            }
-        }
+    "error": {
+      "cannot_connect": "Kan niet verbinden",
+      "invalid_auth": "Ongeldige gebruikersnaam of wachtwoord",
+      "unknown": "Onverwachte fout",
+      "too_many_attempts": "Te veel pogingen. Probeer het later opnieuw om te voorkomen dat je account wordt geblokkeerd."
     },
-    "services": {
-        "reconnect": {
-            "name": "Opnieuw verbinden",
-            "description": "Maakt voor alle items een nieuwe verbinding met de Toshiba-cloud. Gebruik dit nadat je een andere verbinding met hetzelfde account hebt gesloten."
+    "step": {
+      "user": {
+        "description": "Voer het account in dat je in de Toshiba-app gebruikt.",
+        "data": {
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord"
         }
+      },
+      "reauth_confirm": {
+        "description": "De inloggegevens voor {username} zijn niet langer geldig. Voer het huidige wachtwoord in om opnieuw verbinding te maken.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
     }
+  },
+  "entity": {
+    "select": {
+      "cdu_silent": {
+        "name": "Buitenunit stille mode",
+        "state": {
+          "off": "Uit",
+          "cdu_silent_1": "Stille modus 1",
+          "cdu_silent_2": "Stille modus 2"
+        }
+      },
+      "fireplace": {
+        "name": "Openhaard modus",
+        "state": {
+          "off": "Uit",
+          "fireplace_1": "Openhaard 1",
+          "fireplace_2": "Openhaard 2"
+        }
+      }
+    },
+    "sensor": {
+      "outdoor_temperature": {
+        "name": "Buitentemperatuur"
+      },
+      "energy_consumption": {
+        "name": "Energieverbruik"
+      },
+      "indoor_temperature": {
+        "name": "Binnentemperatuur"
+      }
+    },
+    "switch": {
+      "8_degc_mode": {
+        "name": "8 °C modus"
+      },
+      "air_purifier": {
+        "name": "Luchtzuivering"
+      },
+      "eco_mode": {
+        "name": "ECO modus"
+      },
+      "high_power_mode": {
+        "name": "High Power modus"
+      },
+      "wireless_led": {
+        "name": "Draadloze led"
+      }
+    },
+    "binary_sensor": {
+      "self_cleaning": {
+        "name": "Zelfreiniging"
+      }
+    }
+  },
+  "services": {
+    "reconnect": {
+      "name": "Opnieuw verbinden",
+      "description": "Maakt voor alle items een nieuwe verbinding met de Toshiba-cloud. Gebruik dit nadat je een andere verbinding met hetzelfde account hebt gesloten."
+    }
+  }
 }

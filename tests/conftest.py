@@ -23,7 +23,9 @@ from homeassistant.helpers import (
     translation,
 )
 import pytest
-from toshiba_ac_community.device.properties import (
+
+from custom_components.toshiba_ac_link.toshiba.api import LoginResult
+from custom_components.toshiba_ac_link.toshiba.properties import (
     ToshibaAcAirPureIon,
     ToshibaAcFanMode,
     ToshibaAcHorizontalSwingMode,
@@ -41,6 +43,15 @@ import custom_components
 from custom_components.toshiba_ac_link.const import DOMAIN
 
 ACCOUNT = {"username": "user@example.com", "password": "secret"}
+LOGIN = LoginResult("access-token", "Bearer", "consumer-1")
+
+
+class _ClosableResolver(ThreadedResolver):
+    """Resolve names, with the method that Home Assistant calls at shutdown."""
+
+    async def real_close(self) -> None:
+        """Close the resolver."""
+        await self.close()
 
 
 @pytest.fixture(autouse=True)
@@ -48,7 +59,7 @@ def _resolver_without_zeroconf() -> Iterator[None]:
     """Resolve names without Home Assistant's resolver, which starts mDNS sockets."""
     with patch(
         "homeassistant.helpers.aiohttp_client._async_make_resolver",
-        lambda _hass: ThreadedResolver(),
+        lambda _hass: _ClosableResolver(),
     ):
         yield
 
@@ -63,7 +74,7 @@ def make_device(**overrides: Any) -> MagicMock:
     device.ac_id = "ac-id"
     device.ac_unique_id = "unit-1"
     device.ac_model_id = "2"
-    device.device_id = "user@example.com_device"
+    device.connected = True
     device.firmware_version = "5.0.00"
     device.merit_feature = "2c00"
     device.ac_status = ToshibaAcStatus.ON
@@ -121,15 +132,12 @@ def make_device(**overrides: Any) -> MagicMock:
 def make_manager(devices: list[MagicMock] | None = None) -> MagicMock:
     """Return a stand-in for ToshibaAcDeviceManager that connects at once."""
     manager = MagicMock()
-    manager.connect = AsyncMock(return_value="sas-token")
+    manager.connect = AsyncMock()
     manager.shutdown = AsyncMock()
     manager.get_devices = AsyncMock(
         return_value=[make_device()] if devices is None else devices
     )
-    manager.amqp_api.device.connected = True
-    manager.http_api.access_token = "access-token"
-    manager.http_api.access_token_type = "Bearer"
-    manager.http_api.consumer_id = "consumer-1"
+    manager.diagnostics.return_value = {"connected": True}
     return manager
 
 
@@ -196,8 +204,8 @@ async def async_add_entry(
             return_value=manager,
         ),
         patch(
-            "custom_components.toshiba_ac_link.config_flow.ToshibaAcDeviceManager",
-            return_value=manager,
+            "custom_components.toshiba_ac_link.config_flow.async_login",
+            AsyncMock(return_value=LOGIN),
         ),
     ):
         result = await hass.config_entries.flow.async_init(

@@ -8,8 +8,8 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from toshiba_ac_community.device import ToshibaAcDevice
-from toshiba_ac_community.device.properties import (
+from .toshiba.device import ToshibaAcDevice
+from .toshiba.properties import (
     ToshibaAcFanMode,
     ToshibaAcHorizontalSwingMode,
     ToshibaAcMeritA,
@@ -20,7 +20,7 @@ from toshiba_ac_community.device.properties import (
     ToshibaAcSwingMode,
     ToshibaAcVerticalSwingMode,
 )
-from toshiba_ac_community.utils import pretty_enum_name
+from .toshiba.properties import pretty_enum_name
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (

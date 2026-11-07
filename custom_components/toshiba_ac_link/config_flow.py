@@ -2,27 +2,24 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Mapping
 import logging
 import secrets
 from typing import Any
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
 )
 import probatio
-from toshiba_ac_community.device_manager import ToshibaAcDeviceManager
-from toshiba_ac_community.utils.http_api import (
-    ToshibaAcHttpApiAuthError,
-    ToshibaAcHttpApiError,
-)
 
-from .const import CONNECT_TIMEOUT_S, DOMAIN
+from .const import DOMAIN
+from .toshiba.api import async_login
+from .toshiba.errors import ToshibaAuthError, ToshibaBlockedError, ToshibaError
+from .toshiba.guard import async_get_guard
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,54 +37,6 @@ STEP_REAUTH_DATA_SCHEMA = probatio.Schema(
 
 
 # ---------------------------
-#   async_validate_input
-# ---------------------------
-async def async_validate_input(
-    username: str, password: str, device_id: str | None = None
-) -> dict[str, Any]:
-    """Return the data of an entry, if the account can connect.
-
-    Reauthentication passes device_id, to keep the device that Toshiba has already
-    registered instead of adding another one to the account.
-    """
-    if device_id is None:
-        device_id = secrets.token_hex(8)
-
-    device_manager = ToshibaAcDeviceManager(username, password, device_id)
-
-    try:
-        await asyncio.wait_for(device_manager.connect(), timeout=CONNECT_TIMEOUT_S)
-        # shutdown() clears http_api, so read the tokens before it. Storing them
-        # means setup does not have to repeat this login.
-        http_api = device_manager.http_api
-        if http_api is None:
-            raise CannotConnect
-        access_token = http_api.access_token
-        access_token_type = http_api.access_token_type
-        consumer_id = http_api.consumer_id
-    except TimeoutError as ex:
-        _LOGGER.error("Toshiba connection timed out")
-        raise CannotConnect from ex
-    except ToshibaAcHttpApiAuthError as ex:
-        _LOGGER.error("Toshiba rejected the login: %s", ex)
-        raise InvalidAuth from ex
-    except ToshibaAcHttpApiError as ex:
-        _LOGGER.error("Toshiba connection error: %s", ex)
-        raise CannotConnect from ex
-    finally:
-        await device_manager.shutdown()
-
-    return {
-        "username": username,
-        "password": password,
-        "device_id": device_id,
-        "access_token": access_token,
-        "access_token_type": access_token_type,
-        "consumer_id": consumer_id,
-    }
-
-
-# ---------------------------
 #   ToshibaLinkConfigFlow
 # ---------------------------
 class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -98,17 +47,39 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _async_try_input(
         self, username: str, password: str, device_id: str | None = None
     ) -> tuple[dict[str, Any] | None, dict[str, str]]:
-        """Return the data of an entry, or the errors for the form."""
+        """Log in once, and return the data of an entry or the errors for the form.
+
+        The password is not stored. When the token stops working, in about two
+        years, Home Assistant asks for it again, so nothing can repeat a login.
+        Reauthentication passes device_id, to stay the same device for Toshiba.
+        """
+        device_id = device_id or secrets.token_hex(8)
         try:
-            data = await async_validate_input(username, password, device_id)
-        except CannotConnect:
-            return None, {"base": "cannot_connect"}
-        except InvalidAuth:
+            login = await async_login(
+                async_get_clientsession(self.hass),
+                await async_get_guard(self.hass),
+                username,
+                password,
+                device_id,
+            )
+        except ToshibaBlockedError as ex:
+            _LOGGER.warning("Login not attempted: %s", ex)
+            return None, {"base": "too_many_attempts"}
+        except ToshibaAuthError:
             return None, {"base": "invalid_auth"}
+        except ToshibaError as ex:
+            _LOGGER.error("Toshiba connection error: %s", ex)
+            return None, {"base": "cannot_connect"}
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             return None, {"base": "unknown"}
-        return data, {}
+        return {
+            "username": username,
+            "device_id": device_id,
+            "access_token": login.access_token,
+            "access_token_type": login.token_type,
+            "consumer_id": login.consumer_id,
+        }, {}
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -121,8 +92,7 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input["username"], user_input["password"]
             )
             if data is not None:
-                # Toshiba allows one connection per account, so a second entry on
-                # the same account could only fight with the first.
+                # A second entry would double the requests of the same account
                 await self.async_set_unique_id(data["consumer_id"])
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(title=user_input["username"], data=data)
@@ -159,17 +129,3 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders={"username": entry.data["username"]},
             errors=errors,
         )
-
-
-# ---------------------------
-#   CannotConnect
-# ---------------------------
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-# ---------------------------
-#   InvalidAuth
-# ---------------------------
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""

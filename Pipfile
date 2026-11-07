@@ -12,9 +12,6 @@ pytest-asyncio = ">=1.0"
 wheel = ">=0.45"
 pygithub = ">=2.6"
 homeassistant = ">=2026.11.0"
-azure-iot-device = "==2.15.0rc1"
-toshiba-ac-community = "==0.8.0"
-janus = "==1.0.0"
 
 
 [packages]

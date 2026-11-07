@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 import pytest
-from toshiba_ac_community.device.properties import (
+from custom_components.toshiba_ac_link.toshiba.properties import (
     ToshibaAcAirPureIon,
     ToshibaAcHorizontalSwingMode,
     ToshibaAcMeritA,

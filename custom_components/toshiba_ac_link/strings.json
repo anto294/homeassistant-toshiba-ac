@@ -1,87 +1,88 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "This Toshiba account is already configured",
-            "reauth_successful": "Re-authentication was successful"
-        },
-        "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid username or password",
-            "unknown": "Unexpected error"
-        },
-        "step": {
-            "user": {
-                "description": "Enter the account you use in the Toshiba app.",
-                "data": {
-                    "username": "Username",
-                    "password": "Password"
-                }
-            },
-            "reauth_confirm": {
-                "description": "The credentials for {username} are no longer valid. Enter the current password to reconnect.",
-                "data": {
-                    "password": "Password"
-                }
-            }
-        }
+  "config": {
+    "abort": {
+      "already_configured": "This Toshiba account is already configured",
+      "reauth_successful": "Re-authentication was successful"
     },
-    "entity": {
-        "binary_sensor": {
-            "self_cleaning": {
-                "name": "Self cleaning"
-            }
-        },
-        "select": {
-            "cdu_silent": {
-                "name": "Outdoor unit silent mode",
-                "state": {
-                    "off": "Off",
-                    "cdu_silent_1": "Silent 1",
-                    "cdu_silent_2": "Silent 2"
-                }
-            },
-            "fireplace": {
-                "name": "Fireplace mode",
-                "state": {
-                    "off": "Off",
-                    "fireplace_1": "Fireplace 1",
-                    "fireplace_2": "Fireplace 2"
-                }
-            }
-        },
-        "sensor": {
-            "energy_consumption": {
-                "name": "Energy consumption"
-            },
-            "indoor_temperature": {
-                "name": "Indoor temperature"
-            },
-            "outdoor_temperature": {
-                "name": "Outdoor temperature"
-            }
-        },
-        "switch": {
-            "8_degc_mode": {
-                "name": "8 °C mode"
-            },
-            "air_purifier": {
-                "name": "Air purifier"
-            },
-            "eco_mode": {
-                "name": "ECO mode"
-            },
-            "high_power_mode": {
-                "name": "High power mode"
-            },
-            "wireless_led": {
-                "name": "Wireless LED"
-            }
-        }
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid username or password",
+      "unknown": "Unexpected error",
+      "too_many_attempts": "Too many attempts. To protect your account from a lockout, try again later."
     },
-    "services": {
-        "reconnect": {
-            "name": "Reconnect",
-            "description": "Makes a new connection to the Toshiba cloud for all entries. Use it after closing another connection to the same account."
+    "step": {
+      "user": {
+        "description": "Enter the account you use in the Toshiba app.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "description": "The credentials for {username} are no longer valid. Enter the current password to reconnect.",
+        "data": {
+          "password": "Password"
+        }
+      }
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "self_cleaning": {
+        "name": "Self cleaning"
+      }
+    },
+    "select": {
+      "cdu_silent": {
+        "name": "Outdoor unit silent mode",
+        "state": {
+          "off": "Off",
+          "cdu_silent_1": "Silent 1",
+          "cdu_silent_2": "Silent 2"
+        }
+      },
+      "fireplace": {
+        "name": "Fireplace mode",
+        "state": {
+          "off": "Off",
+          "fireplace_1": "Fireplace 1",
+          "fireplace_2": "Fireplace 2"
+        }
+      }
+    },
+    "sensor": {
+      "energy_consumption": {
+        "name": "Energy consumption"
+      },
+      "indoor_temperature": {
+        "name": "Indoor temperature"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor temperature"
+      }
+    },
+    "switch": {
+      "8_degc_mode": {
+        "name": "8 °C mode"
+      },
+      "air_purifier": {
+        "name": "Air purifier"
+      },
+      "eco_mode": {
+        "name": "ECO mode"
+      },
+      "high_power_mode": {
+        "name": "High power mode"
+      },
+      "wireless_led": {
+        "name": "Wireless LED"
+      }
+    }
+  },
+  "services": {
+    "reconnect": {
+      "name": "Reconnect",
+      "description": "Makes a new connection to the Toshiba cloud for all entries. Use it after closing another connection to the same account."
+    }
+  }
 }
