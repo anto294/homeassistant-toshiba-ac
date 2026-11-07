@@ -80,6 +80,9 @@ always merged. Measured on two accounts:
   a target with both: 8 °C, and then the earlier target or 20 °C. The earlier target is
   kept in memory for one visit to the mode, and is dropped once the state shows that the
   mode ended, by a command or from the app. A command that fails keeps it.
+- Commands sent about 300 ms apart got their echoes after the next command had already
+  updated the state, so an entity showed the older value for a fraction of a second, and
+  settled on the last one. The list of units confirmed the end state.
 - Of about 30 accepted commands, two on one unit in a row got no echo, and the unit did not
   apply them, although Toshiba answered `Success`. The same sequence worked when repeated.
   The entity shows a command at once, so without an echo after 2 minutes a warning is
