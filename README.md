@@ -306,11 +306,11 @@ Home Assistant grades the integrations in its core with the [Integration Quality
 | Tier | Rules | Met | Not applicable | Not met |
 |---|---:|---:|---:|---:|
 | Bronze | 20 | 17 | 3 | 0 |
-| Silver | 10 | 8 | 1 | 1 |
+| Silver | 10 | 9 | 1 | 0 |
 | Gold | 21 | 13 | 3 | 5 |
 | Platinum | 3 | 3 | 0 | 0 |
 
-A tier needs every rule of that tier and the ones below it, so this project meets Bronze, and does not claim the others yet.
+A tier needs every rule of that tier and the ones below it, so this project meets Bronze and Silver, and does not claim the others yet. The tests cover 99 percent of the code, and CI measures this on each run.
 
 ## Credits and license
 

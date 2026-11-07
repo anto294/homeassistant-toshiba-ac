@@ -116,8 +116,8 @@ jobs:
             "https://raw.githubusercontent.com/home-assistant/core/$HA_VERSION/homeassistant/package_constraints.txt"
           mapfile -t REQUIREMENTS < <(python -c 'import json; [print(r) for r in json.load(open("custom_components/toshiba_ac_link/manifest.json"))["requirements"]]')
           EXTRA="${{ matrix.extra }}"
-          # pytest-asyncio is only for the tests
-          pip install "homeassistant==$HA_VERSION" "${REQUIREMENTS[@]}" pytest pytest-asyncio ${EXTRA:+"$EXTRA"} -c "$RUNNER_TEMP/constraints.txt"
+          # pytest-asyncio and pytest-cov are only for the tests
+          pip install "homeassistant==$HA_VERSION" "${REQUIREMENTS[@]}" pytest pytest-asyncio pytest-cov ${EXTRA:+"$EXTRA"} -c "$RUNNER_TEMP/constraints.txt"
 
       - name: Import all integration modules
         run: |
@@ -132,7 +132,7 @@ jobs:
           EOF
 
       - name: Run tests
-        run: python -m pytest -v
+        run: python -m pytest -v --cov=custom_components.toshiba_ac_link --cov-report=term-missing --cov-fail-under=95
 
       - name: Check types with mypy (strict)
         run: |

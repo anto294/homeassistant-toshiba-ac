@@ -63,7 +63,7 @@ pipenv install --dev            # or: python .github/generate_requirements.py &&
 black .
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 mypy -p custom_components.toshiba_ac_link
-python -m pytest
+python -m pytest --cov=custom_components.toshiba_ac_link --cov-report=term-missing
 ```
 
 Tests live in `tests/` (pytest, `[tool:pytest]` in `setup.cfg`) and run against an installed Home Assistant. `tests/conftest.py` starts a real core with `run_in_hass`, and `async_add_entry` adds an entry through the real form. `make_device` and `make_manager` replace the client's objects for tests of entities, with its real enums. `tests/fake_toshiba.py` is a local server for tests of the client itself, which counts requests. No test talks to Toshiba. Mock a synchronous Home Assistant API with `MagicMock`, not `AsyncMock`, which would hide an `await` of a callback. CI runs the tests in the "Import and test" job on the oldest supported and the latest Home Assistant, and also runs hassfest.

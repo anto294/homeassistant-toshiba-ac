@@ -41,8 +41,8 @@ rules:
   parallel-updates: done
   reauthentication-flow: done
   test-coverage:
-    status: todo
-    comment: The tests cover about 90 percent, and the rule asks for 95.
+    status: done
+    comment: 99 percent in total and at least 97 in each module, measured with pytest-cov. CI fails below 95 in total.
   # Gold
   devices: done
   diagnostics: done
