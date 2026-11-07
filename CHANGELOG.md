@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0b2] - 2026-11-07
+
 ### Fixed
 
 - A restart no longer loses about 10 seconds and a request trying to reuse the address of
