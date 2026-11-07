@@ -140,8 +140,9 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         """Return True if the device runs at the user's request.
 
         During self cleaning the AC reports ON, because the fan dries the heat
-        exchanger, but the user turned it off and the Toshiba app shows it as off.
-        Turning it on goes through set_ac_status(ON), which ends the cleaning.
+        exchanger, and the Toshiba app shows it as on too. But the user turned it off,
+        and the cleaning ends by itself, so this shows off. Turning it on goes through
+        set_ac_status(ON), which ends the cleaning. In the app, a second off ends it too.
         """
         return (
             self._device.ac_status == ToshibaAcStatus.ON

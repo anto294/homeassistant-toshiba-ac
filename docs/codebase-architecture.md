@@ -80,7 +80,13 @@ always merged. Measured on two accounts:
   change the wire value by itself, so 13 °C would become 29 °C. So `send_state_to_ac` sends
   a target with both: 8 °C, and then the earlier target or 20 °C. The earlier target is
   kept in memory for one visit to the mode, and is dropped once the state shows that the
-  mode ended, by a command or from the app. A command that fails keeps it.
+  mode ended, by a command or from the app. A command that fails keeps it. The Toshiba app
+  sends its own targets: on a model 2 unit, once, 5 °C when entering, shown the same in the
+  app and here, and 22 °C when leaving, with the unit staying on in heat. Whether a unit
+  really heats in this mode was not seen, since the room was warmer than the target.
+- A unit can start self cleaning when it is turned off after at least 30 minutes in cool or
+  dry, as reported by a user. During the cleaning it reports ON, and the Toshiba app shows
+  on. The cleaning ends by itself, and in the app a second off ends it sooner.
 - Commands sent about 300 ms apart got their echoes after the next command had already
   updated the state, so an entity showed the older value for a fraction of a second, and
   settled on the last one. The list of units confirmed the end state.

@@ -36,7 +36,7 @@ This integration lets you monitor and control Toshiba air conditioners with a Wi
 ## What you can do with it
 
 - **Automate comfort:** heat the living room before you get home, or turn everything off when the last person leaves.
-- **Protect an empty home:** turn on the 8 °C mode from an automation when you leave for the winter.
+- **Protect an empty home:** turn on the 8 °C mode from an automation when you leave for the winter. See [Tested units](#tested-units) for what was confirmed about this mode.
 - **Keep nights quiet:** set the outdoor unit to silent mode at bedtime.
 - **Follow energy use:** add each unit to the Energy dashboard, if the unit reports its consumption.
 
@@ -97,7 +97,7 @@ Each unit becomes a device. An entity only exists if the unit has the function.
 | Indoor temperature | Sensor | Disabled at first on new units, because the climate entity shows the same value. To use it, select **Enable** in the settings of the entity |
 | Outdoor temperature | Sensor | Unavailable while the outdoor unit reports nothing |
 | Energy consumption | Sensor | In Wh since the start of the year. Works with the Energy dashboard |
-| Self cleaning | Binary sensor | On while the unit is cleaning itself. The climate entity shows off during this time, as the app does |
+| Self cleaning | Binary sensor | On while the unit is cleaning itself, which can start when you turn it off after at least 30 minutes in cool or dry, and ends by itself. The climate entity shows off during this time, while the Toshiba app shows on. In the app, a second off stops the cleaning early. `climate.turn_off` sends the same command, but this has not been tried on a real unit |
 | Outdoor unit silent mode | Select | Off, Silent 1, Silent 2 |
 | Fireplace mode | Select | Off, Fireplace 1, Fireplace 2 |
 | 8 °C mode | Switch | Frost protection, with a target of 5 to 13 °C, or to 16 °C on model 3 units. Turning it on sets the target to 8 °C. Turning it off goes back to the target from before Home Assistant turned it on, or to 20 °C if that is not known, such as after a restart or when it was turned on in the app |
@@ -206,7 +206,7 @@ Tested by the author on Home Assistant 2026.11, on two accounts:
 
 | Unit | Toshiba model data | Tried so far |
 |---|---|---|
-| RAS-B10N4KVSG-E, 5 units, firmware 5.0.00 | Model 2, features `2c00` | Reading, turning on in a mode with one command, turning off, temperature, fan while off, 8 °C mode, entering and leaving it, with targets of 8 to 13 °C, silent mode, choosing off on it while ECO or the 8 °C mode is active, leaving the 8 °C mode after another client turned it on, all modes and fan speeds, vertical swing, power presets, ECO, high power, fireplace mode, wireless LED, reconnection, restart. For the functions from all modes on, the commands were accepted and the entities held the new values, and nobody watched the unit itself |
+| RAS-B10N4KVSG-E, 5 units, firmware 5.0.00 | Model 2, features `2c00` | Reading, turning on in a mode with one command, turning off, temperature, fan while off, 8 °C mode, entering and leaving it, with targets of 8 to 13 °C, silent mode, choosing off on it while ECO or the 8 °C mode is active, leaving the 8 °C mode after another client turned it on, turning that mode on and off in the Toshiba app, which Home Assistant followed, all modes and fan speeds, vertical swing, power presets, ECO, high power, fireplace mode, wireless LED, reconnection, restart. For the functions from all modes on, the commands were accepted and the entities held the new values, and nobody watched the unit itself |
 | Unknown model, 2 units, firmware 5.0.00 | Model 3, features `2c03` | Reading, the energy answer, turning on in a mode with one command, turning off, and the 8 °C mode, entering and leaving it, where the unit keeps its target at 16 °C or below, and fixed vertical swing positions 1 to 5, which the list of units confirmed. With the client alone, not yet in Home Assistant |
 
 Results with other units are welcome in the [issues](https://github.com/anto294/homeassistant-toshiba-ac/issues). The diagnostics file shows the model data of each unit.
@@ -216,7 +216,7 @@ Automated tests cover the rest against a local stand-in for Toshiba, but these h
 - Model 3 units inside Home Assistant, including their energy sensor. They were tried with the client alone.
 - The air purifier and independent vanes, which the tested units do not have.
 - Toggling during self cleaning, and a unit joining or leaving the account.
-- Turning on the 8 °C mode in the Toshiba app itself. A second client stood in for the app.
+- Whether a unit really heats in the 8 °C mode when the room falls below the target. This mode was confirmed through commands and the reported state, in rooms warmer than the target, where a unit has no reason to heat.
 - How the integration handles a command that a unit never applies, a mode outside a unit's features, a value it does not know, and an answer with an unexpected shape. These could not be caused on purpose.
 
 ## Known limitations

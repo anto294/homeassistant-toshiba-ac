@@ -12,6 +12,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - The migration guide no longer says that most entity IDs stay the same. It now explains
   that they can change, also by starting with the area of the unit, and that device actions
   in scripts and automations must point to the new device.
+- The README no longer says that the Toshiba app shows a unit as off during self cleaning.
+  The app shows on, and the cleaning ends by itself. It also says that the 8 °C mode was
+  confirmed through commands and the reported state, and not yet seen heating.
 
 ## [0.1.1] - 2026-11-07
 
