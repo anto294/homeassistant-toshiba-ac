@@ -207,7 +207,17 @@ Tested by the author on Home Assistant 2026.11, on two accounts:
 | RAS-B10N4KVSG-E, 5 units, firmware 5.0.00 | Model 2, features `2c00` | Reading, turning on in a mode with one command, turning off, temperature, fan while off, 8 °C mode, entering and leaving it, with targets of 8 to 13 °C, silent mode, choosing off on it while ECO or the 8 °C mode is active, leaving the 8 °C mode after another client turned it on, reconnection, restart |
 | Unknown model, 2 units, firmware 5.0.00 | Model 3, features `2c03` | Reading, the energy answer, turning on in a mode with one command, turning off, and the 8 °C mode, entering and leaving it, where the unit keeps its target at 16 °C or below. With the client alone, not yet in Home Assistant |
 
-Results with other units are welcome in the [issues](https://github.com/anto294/homeassistant-toshiba-ac/issues). The diagnostics file shows the model data of each unit. Not yet tried on a real unit: toggling during self cleaning, independent vanes, and a unit joining or leaving the account.
+Results with other units are welcome in the [issues](https://github.com/anto294/homeassistant-toshiba-ac/issues). The diagnostics file shows the model data of each unit.
+
+Automated tests cover the rest against a local stand-in for Toshiba, but these have not been tried on a real unit yet:
+
+- Model 3 units inside Home Assistant, including their energy sensor. They were tried with the client alone.
+- Targets above 13 °C in the 8 °C mode on model 2 units.
+- Fireplace mode, air purifier, wireless LED and high power mode.
+- Vertical swing positions, independent vanes and power presets.
+- Toggling during self cleaning, and a unit joining or leaving the account.
+- Turning on the 8 °C mode in the Toshiba app itself. A second client stood in for the app.
+- How the integration handles a command that a unit never applies, a mode outside a unit's features, a value it does not know, and an answer with an unexpected shape. These could not be caused on purpose.
 
 ## Known limitations
 

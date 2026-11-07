@@ -19,7 +19,7 @@ and includes work from version 2026.10.0 of
 
 The code is the same as 0.1.0b5, so this update changes nothing in how the integration
 works, and your entities and settings stay as they are. Beta versions no longer need to be
-turned on. The sections below list the changes of each beta.
+turned on. The changelog lists the changes of each beta.
 
 ### If you install it for the first time
 
