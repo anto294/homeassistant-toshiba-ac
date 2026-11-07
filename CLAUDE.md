@@ -41,7 +41,7 @@ See `docs/authentication.md` for the requests and limits, and `docs/codebase-arc
 - One logical change per commit, with a detailed English message (summary, then what and why). Never batch unrelated changes. Run black before committing.
 - Format with **black** (CI runs `black . --check`). Run `black .` before committing.
 - Types: CI runs `mypy -p custom_components.toshiba_ac_link`, strict, configured in `setup.cfg`. A `type: ignore` needs a comment that says why.
-- Lint: CI runs `flake8` with `max-line-length=127`. `setup.cfg` sets 220 for local use.
+- Lint: CI runs `flake8` with `max-line-length=127`. `setup.cfg` sets 220 for local use. CI also runs `ruff` on the integration, and a finding fails the job.
 - Security: CI runs Bandit on the integration, and CodeQL runs separately.
 - Every function and class gets a docstring, and top-level ones get this banner:
   ```python
@@ -63,6 +63,7 @@ See `docs/authentication.md` for the requests and limits, and `docs/codebase-arc
 pipenv install --dev            # or: python .github/generate_requirements.py && pip install -r requirements_tests.txt
 black .
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+ruff check custom_components --select E,F,B,ASYNC,S --ignore E501
 mypy -p custom_components.toshiba_ac_link
 python -m pytest --cov=custom_components.toshiba_ac_link --cov-report=term-missing
 ```

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint (black, flake8, JSON)
+    name: Lint (black, flake8, ruff, JSON)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,7 +29,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install linters
-        run: python -m pip install --upgrade black flake8
+        run: python -m pip install --upgrade black flake8 ruff
 
       - name: Check formatting with black
         run: black . --check --diff
@@ -39,6 +39,9 @@ jobs:
 
       - name: Report style issues with flake8 (non-blocking)
         run: flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
+
+      - name: Check for likely bugs with ruff
+        run: ruff check custom_components --select E,F,B,ASYNC,S --ignore E501
 
       - name: Validate JSON files
         run: |
