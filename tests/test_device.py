@@ -438,3 +438,72 @@ async def test_a_temperature_in_8c_mode_is_not_taken_for_the_earlier_one() -> No
     await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
 
     assert unit.ac_temperature == 22
+
+
+ENTERED_IN_THE_APP = "ffffffffffff04" + "ff" * 12
+LEFT_IN_THE_APP = "ffffffffffff00" + "ff" * 12
+
+
+async def test_leaving_8c_mode_forgets_the_earlier_target() -> None:
+    """A later visit that began in the app must not bring back an old target."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_temperature(24)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+    assert unit.ac_temperature == 24
+    await unit.set_ac_temperature(19)
+
+    await unit.async_update_state(ENTERED_IN_THE_APP)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+
+    assert unit.ac_temperature == 20
+
+
+async def test_leaving_8c_mode_in_the_app_forgets_the_earlier_target_too() -> None:
+    """The target saved on the way in belongs to that visit, however it ended."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_temperature(24)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+
+    await unit.async_update_state(LEFT_IN_THE_APP)
+    await unit.async_update_state(ENTERED_IN_THE_APP)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+
+    assert unit.ac_temperature == 20
+
+
+async def test_a_failed_exit_from_8c_mode_keeps_the_earlier_target() -> None:
+    """The unit is still in the mode, and the next attempt needs the value."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_temperature(24)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+    unit._send_command.side_effect = RuntimeError("refused")
+
+    with pytest.raises(RuntimeError):
+        await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+    assert unit.ac_merit_a is ToshibaAcMeritA.HEATING_8C
+
+    unit._send_command.side_effect = None
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+    assert unit.ac_temperature == 24
+
+
+async def test_an_echo_during_an_exit_from_8c_mode_does_not_restore_the_target() -> (
+    None
+):
+    """An echo can arrive before Toshiba's answer to the command."""
+    unit = make_unit(HEATING)
+    await unit.set_ac_temperature(24)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.HEATING_8C)
+
+    async def echo(_unit_id: str, frame: str) -> None:
+        await unit.async_update_state(frame[:38])
+
+    unit._send_command.side_effect = echo
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+    assert unit.ac_temperature == 24
+    unit._send_command.side_effect = None
+
+    await unit.async_update_state(ENTERED_IN_THE_APP)
+    await unit.set_ac_merit_a(ToshibaAcMeritA.OFF)
+    assert unit.ac_temperature == 20

@@ -13,6 +13,10 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   another function. These selects show off while ECO, high power or the 8 °C mode is
   active, and choosing off used to clear that function, which for the 8 °C mode also sent
   a target of 20 °C. It now sends no command unless the select's own function is active.
+- Turning off the 8 °C mode no longer brings back a target from an earlier time. The saved
+  target now lasts for one visit to the mode, so if the mode was turned on in the app,
+  turning it off goes to 20 °C. A command that fails keeps the saved target for the next
+  attempt.
 
 ## [0.1.0b4] - 2026-11-07
 

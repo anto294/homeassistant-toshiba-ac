@@ -131,7 +131,12 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
 
     async def async_update_state(self, hex_state: str) -> None:
         """Merge a state, in which unchanged fields have the value ff."""
-        if self.fcu_state.update(hex_state):
+        changed = self.fcu_state.update(hex_state)
+        # The saved target belongs to one visit to 8 °C mode, however that visit ended.
+        # A command that failed changes no state, so its next attempt still has it.
+        if self.ac_merit_a != ToshibaAcMeritA.HEATING_8C:
+            self._target_before_8c = None
+        if changed:
             await self.state_changed()
 
     async def state_changed(self) -> None:
