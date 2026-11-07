@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0b4] - 2026-11-07
+
 ### Fixed
 
 - Turning off the 8 °C mode no longer leaves a target of 29 °C or more, at which a unit
