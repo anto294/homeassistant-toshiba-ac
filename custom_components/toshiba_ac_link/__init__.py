@@ -17,6 +17,7 @@ from toshiba_ac_community.utils.http_api import ToshibaAcHttpApiAuthError
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryError,
@@ -65,6 +66,8 @@ async def _patched_send_message(
 
 
 toshiba_amqp_api.ToshibaAcAmqpApi.send_message = _patched_send_message
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS = ["binary_sensor", "climate", "select", "sensor", "switch"]
 
@@ -153,7 +156,15 @@ def _clear_connection_notice(hass: HomeAssistant) -> None:
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the Toshiba Link component."""
+    """Register the actions, which exist even when no entry is loaded."""
+
+    async def handle_reconnect(_call: ServiceCall) -> None:
+        """Reload all entries, which makes new connections."""
+        _LOGGER.info("Reconnect action called, reloading all entries")
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            await hass.config_entries.async_reload(entry.entry_id)
+
+    hass.services.async_register(DOMAIN, "reconnect", handle_reconnect)
     return True
 
 
@@ -209,28 +220,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.runtime_data = device_manager
 
-    # Register reconnect service (once per domain)
-    await _async_register_services(hass)
-
     # Forward setup to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
-
-
-async def _async_register_services(hass: HomeAssistant) -> None:
-    """Register integration services."""
-    if hass.services.has_service(DOMAIN, "reconnect"):
-        return
-
-    async def handle_reconnect(call: ServiceCall) -> None:
-        """Handle the reconnect service call."""
-        _LOGGER.info("Reconnect service called - reloading all config entries")
-        # Reload all config entries for this domain
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            await hass.config_entries.async_reload(entry.entry_id)
-
-    hass.services.async_register(DOMAIN, "reconnect", handle_reconnect)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

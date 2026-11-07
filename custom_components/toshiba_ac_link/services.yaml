@@ -1,3 +1,1 @@
 reconnect:
-  name: Reconnect
-  description: Force reconnection to the Toshiba AC cloud service. Use this if your AC devices become unavailable due to connection issues.
