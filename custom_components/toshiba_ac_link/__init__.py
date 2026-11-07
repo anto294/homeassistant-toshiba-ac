@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
-import time
 
 from azure.iot.device.common.transport_exceptions import (
     ConnectionDroppedError,
@@ -14,6 +12,7 @@ from azure.iot.device.common.transport_exceptions import (
 from azure.iot.device.exceptions import CredentialError
 from toshiba_ac_community.device_manager import ToshibaAcDeviceManager
 from toshiba_ac_community.utils import amqp_api as toshiba_amqp_api
+from toshiba_ac_community.utils.http_api import ToshibaAcHttpApiAuthError
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -71,43 +70,29 @@ PLATFORMS = ["climate", "select", "sensor", "switch"]
 # The upstream AMQP connect has no timeout of its own
 CONNECT_TIMEOUT_S = 30
 
-# Azure asks for a new SAS token 120s before expiry, add some margin on top
-SAS_TOKEN_RENEWAL_MARGIN_S = 300
-
-# Raised by the Azure client when the SAS token itself is the problem: a
-# malformed one (ValueError), one that is expired, or one IoT Hub refuses.
-SAS_TOKEN_ERRORS = (ValueError, CredentialError, UnauthorizedError)
+# Raised by the Azure client when IoT Hub refuses the connection. Setup always
+# registers a new SAS token, so these point at a competing connection.
+CONNECTION_REFUSED_ERRORS = (ValueError, CredentialError, UnauthorizedError)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _sas_token_is_expired(sas_token: str) -> bool:
-    """Check the expiry carried by a SAS token.
-
-    An unparsable token counts as usable, so an unknown token format never
-    causes an endless re-registration.
-    """
-    match = re.search(r"[?&]se=(\d+)", sas_token)
-
-    if not match:
-        return False
-
-    return int(match.group(1)) - time.time() <= SAS_TOKEN_RENEWAL_MARGIN_S
-
-
 def _create_device_manager(entry: ConfigEntry) -> ToshibaAcDeviceManager:
-    """Build the device manager, discarding a SAS token that is already expired."""
-    sas_token = entry.data.get("sas_token")
+    """Build the device manager from the stored account and tokens.
 
-    if sas_token and _sas_token_is_expired(sas_token):
-        _LOGGER.warning("Stored SAS token has expired, a new one will be registered")
-        sas_token = None
-
+    A SAS token is never reused, because it may have expired while Home Assistant
+    was stopped. The access token is: it lives long, and skipping the login avoids
+    the most rate-limited endpoint of Toshiba's API. A stale one costs one 401 and
+    a new login inside the library.
+    """
     return ToshibaAcDeviceManager(
         entry.data["username"],
         entry.data["password"],
         entry.data["device_id"],
-        sas_token,
+        sas_token=None,
+        access_token=entry.data.get("access_token"),
+        access_token_type=entry.data.get("access_token_type"),
+        consumer_id=entry.data.get("consumer_id"),
     )
 
 
@@ -116,29 +101,22 @@ async def _async_connect(device_manager: ToshibaAcDeviceManager) -> str:
     return await asyncio.wait_for(device_manager.connect(), timeout=CONNECT_TIMEOUT_S)
 
 
-def _setup_error(ex: Exception, token_was_refreshed: bool = False) -> ConfigEntryError:
+def _setup_error(ex: Exception) -> ConfigEntryError:
     """Translate a connect failure into the error Home Assistant reacts to."""
-    if isinstance(ex, asyncio.TimeoutError):
+    if isinstance(ex, TimeoutError):
         return ConfigEntryNotReady(
             f"Connection to Toshiba AC service timed out after {CONNECT_TIMEOUT_S} seconds"
         )
 
-    if isinstance(ex, SAS_TOKEN_ERRORS):
-        detail = (
-            "The SAS token was just re-registered and IoT Hub refused it anyway, "
-            "so the token is not the problem. "
-            if token_was_refreshed
-            else ""
-        )
+    if isinstance(ex, CONNECTION_REFUSED_ERRORS):
         return ConfigEntryNotReady(
-            f"Failed to connect to Toshiba AC service: {ex}. {detail}{ONE_CONNECTION_HINT}"
+            f"Failed to connect to Toshiba AC service: {ex}. {ONE_CONNECTION_HINT}"
         )
 
-    error_str = str(ex).lower()
-    if "401" in error_str or "403" in error_str or "auth" in error_str:
-        return ConfigEntryAuthFailed(
-            f"Authentication failed: {ex}. Please reconfigure the integration."
-        )
+    # Only a real login failure: a rate limit or a 403 from the WAF must not ask
+    # the user for a password, and must keep retrying.
+    if isinstance(ex, ToshibaAcHttpApiAuthError):
+        return ConfigEntryAuthFailed(f"Authentication failed: {ex}")
 
     return ConfigEntryNotReady(f"Failed to connect to Toshiba AC service: {ex}")
 
@@ -172,47 +150,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Toshiba Link from a config entry."""
     device_manager = _create_device_manager(entry)
 
+    async def access_token_updated(token_info: tuple[str, str, str]) -> None:
+        """Store a new access token, so the next start needs no login."""
+        access_token, access_token_type, consumer_id = token_info
+        hass.config_entries.async_update_entry(
+            entry,
+            data={
+                **entry.data,
+                "access_token": access_token,
+                "access_token_type": access_token_type,
+                "consumer_id": consumer_id,
+            },
+        )
+
+    # Added before connect(), so the token of a login during connect() is stored too
+    device_manager.on_access_token_updated_callback.add(access_token_updated)
+
     try:
-        new_sas_token = await _async_connect(device_manager)
-    except SAS_TOKEN_ERRORS as ex:
-        if not device_manager.sas_token:
-            raise _setup_error(ex) from ex
-
-        # IoT Hub refused the stored token. Registering a new one is the only
-        # way back, keeping the token would fail the same way on every retry.
-        _LOGGER.warning("Stored SAS token was rejected (%s), registering a new one", ex)
-        device_manager.sas_token = None
-
-        try:
-            new_sas_token = await _async_connect(device_manager)
-        except SAS_TOKEN_ERRORS as retry_ex:
-            # A token that Toshiba's own API issued seconds ago is almost
-            # certainly valid, so a refusal points at a competing connection.
-            refusal = CONNECTION_REFUSED_ERROR.format(err=retry_ex)
-            _LOGGER.error("%s", refusal)
-            _notify_connection_refused(hass, refusal)
-            raise _setup_error(retry_ex, token_was_refreshed=True) from retry_ex
-        except Exception as retry_ex:
-            raise _setup_error(retry_ex) from retry_ex
+        await _async_connect(device_manager)
+    except CONNECTION_REFUSED_ERRORS as ex:
+        refusal = CONNECTION_REFUSED_ERROR.format(err=ex)
+        _LOGGER.error("%s", refusal)
+        _notify_connection_refused(hass, refusal)
+        raise _setup_error(ex) from ex
     except Exception as ex:
         raise _setup_error(ex) from ex
 
     _clear_connection_notice(hass)
-
-    # Save updated SAS token if we got a new one
-    if new_sas_token and new_sas_token != entry.data.get("sas_token"):
-        _LOGGER.info("SAS token updated during connection")
-        new_data = {**entry.data, "sas_token": new_sas_token}
-        hass.config_entries.async_update_entry(entry, data=new_data)
-
-    # Set up SAS token update callback
-    async def sas_token_updated(new_sas_token: str) -> None:
-        """Handle SAS token update from the device manager."""
-        _LOGGER.info("SAS token updated by device manager")
-        new_data = {**entry.data, "sas_token": new_sas_token}
-        hass.config_entries.async_update_entry(entry, data=new_data)
-
-    device_manager.on_sas_token_updated_callback.add(sas_token_updated)
 
     # Store device manager
     hass.data[DOMAIN][entry.entry_id] = device_manager
