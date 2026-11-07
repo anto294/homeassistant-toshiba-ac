@@ -118,7 +118,7 @@ Your units talk only to the Toshiba cloud. Home Assistant talks to it in two way
 | Data | How | When |
 |---|---|---|
 | State of the unit | Pushed by the Toshiba cloud | When it changes. A change made in the app can take a minute or two |
-| State of all units, full refresh | One request | Every 30 minutes, and after a reconnection |
+| State of all units, full refresh | One request | Every 30 minutes, and 5 minutes after a reconnection or a restart that reused a recent list |
 | Energy consumption | One request, only if a unit reports it | Every hour |
 | A command | One request, never repeated automatically | When you send it. The entity shows the new value as soon as Toshiba accepts it |
 | Login | One request | Only when you send the setup or reauthentication form |
@@ -130,7 +130,7 @@ If the WebSocket drops, the entities of that account become unavailable, and the
 Toshiba limits requests and locks accounts after failed logins, without saying where the limits are. This integration is built around that, although nothing can guarantee that Toshiba never blocks an account:
 
 - It logs in only when you send a form, so a restart can never repeat a login.
-- A restart reuses a recent list of units, so it costs one request, for opening the channel, or two after 15 minutes.
+- A restart reuses a recent list of units, so it costs one request, for opening the channel, or two after 15 minutes. Running on for 5 minutes adds one more, to correct the list.
 - If Toshiba answers 403 or 429, all requests stop for at least 15 minutes, doubling up to a day, even across restarts. It does not ask for your password in that case.
 - It stays below 120 requests per hour. Past that, requests and commands wait until the hour ends, so a restart loop cannot go on sending.
 - A token that Toshiba rejected is never sent again, and Home Assistant asks for the password.

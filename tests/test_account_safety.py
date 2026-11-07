@@ -6,6 +6,7 @@ drops the guard from memory, as a real one does, so only the disk can help.
 
 from __future__ import annotations
 
+import asyncio
 import time
 from unittest.mock import patch
 
@@ -22,10 +23,12 @@ from custom_components.toshiba_ac_link.toshiba.guard import (
 
 from .conftest import ACCOUNT
 from .fake_toshiba import (
+    RUNNING_STATE,
     FakeToshiba,
     add_real_entry as add_entry,
     make_jwt,
     run_fake_toshiba,
+    wait_until,
 )
 
 MANAGER = "custom_components.toshiba_ac_link.toshiba.manager"
@@ -59,7 +62,10 @@ def test_the_password_is_not_stored(run_in_hass) -> None:
 
 
 def test_fifty_restarts_make_no_login_and_reuse_the_units(run_in_hass) -> None:
-    """A restart only asks for the socket address, which works for one connection."""
+    """A restart only asks for the socket address, which works for one connection.
+
+    The catch-up after a saved list waits 5 minutes, so a loop cancels it every time.
+    """
 
     async def scenario(hass: HomeAssistant) -> None:
         async with run_fake_toshiba() as fake:
@@ -74,6 +80,33 @@ def test_fifty_restarts_make_no_login_and_reuse_the_units(run_in_hass) -> None:
             assert fake.requests == {"login": 1, "mapping": 1, "channel": 51}
             assert len(fake.sockets) == 51
             await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_a_start_from_the_saved_list_catches_up_later(run_in_hass) -> None:
+    """The saved list misses commands and pushes, so one request corrects it."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            with patch(f"{MANAGER}.REFRESH_MIN_S", 0.05):
+                entry = await add_entry(hass)
+                # A start that just asked for the list has nothing to catch up on
+                await asyncio.sleep(0.2)
+                assert fake.requests["mapping"] == 1
+
+                fake.units[0]["ACStateData"] = RUNNING_STATE
+                await restart(hass, entry)
+                assert fake.requests["mapping"] == 1
+                assert hass.states.get("climate.living_room").state == "off"
+
+                await wait_until(lambda: fake.requests["mapping"] == 2)
+                await wait_until(
+                    lambda: hass.states.get("climate.living_room").state == "cool"
+                )
+                await asyncio.sleep(0.2)
+                assert fake.requests["mapping"] == 2
+                await unload(hass, entry)
 
     run_in_hass(scenario)
 

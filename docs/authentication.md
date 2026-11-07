@@ -55,7 +55,7 @@ sequenceDiagram
 | Endpoint | Method | When |
 |----------|--------|------|
 | `/api/Consumer/Login` | POST | When the user sends a form, and never otherwise |
-| `/api/AC/GetConsumerACMapping` | GET | At a start without a recent list, about every 30 minutes, and after a reconnection, at most every 5 minutes |
+| `/api/AC/GetConsumerACMapping` | GET | At a start without a recent list, 5 minutes after a start that reused one, about every 30 minutes, and 5 minutes after a reconnection |
 | `/api/RealTime/GetWebPubSubToken` | POST | Each time the socket opens, since an address works for one connection |
 | `/api/IoTHub/SendCommand` | POST | Once per command |
 | `/api/AC/GetGroupACEnergyConsumption` | POST | At most hourly, only if a unit reports energy |
@@ -81,7 +81,7 @@ restart starts with what it knew, so restarting cannot reset them.
 | HTTP 401 | The token is never sent again, and Home Assistant asks for the password |
 | A token that says it expired | The same, without a request |
 | 3 failed logins in an hour on one account | The form says to try later, and sends nothing |
-| A restart | Reuses a list of units up to 15 minutes old and an energy reading up to an hour old, so it costs one request for the socket address, or two after 15 minutes |
+| A restart | Reuses a list of units up to 15 minutes old and an energy reading up to an hour old, so it costs one request for the socket address, or two after 15 minutes. If it keeps running for 5 minutes, one more request corrects the reused list |
 
 `tests/test_account_safety.py` proves these against a local server that counts requests.
 Keep it passing, and extend it with any new request.

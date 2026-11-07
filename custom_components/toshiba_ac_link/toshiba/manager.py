@@ -131,6 +131,9 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         cached = self._guard.cached("units", self._consumer_id)
         if cached and 0 <= time.time() - cached["at"] < UNITS_CACHE_S:
             groups = cached["groups"]
+            # The saved list misses commands and pushes since it was saved, so ask
+            # again later. This waits REFRESH_MIN_S, so a restart loop cancels it.
+            self._refresh_now.set()
         else:
             groups = await self._api.async_get_groups()
             await self._guard.async_cache(
