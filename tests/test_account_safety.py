@@ -21,22 +21,14 @@ from custom_components.toshiba_ac_link.toshiba.guard import (
 )
 
 from .conftest import ACCOUNT
-from .fake_toshiba import FakeToshiba, make_jwt, run_fake_toshiba
+from .fake_toshiba import (
+    FakeToshiba,
+    add_real_entry as add_entry,
+    make_jwt,
+    run_fake_toshiba,
+)
 
 MANAGER = "custom_components.toshiba_ac_link.toshiba.manager"
-
-
-async def add_entry(hass: HomeAssistant) -> ConfigEntry:
-    """Add an account through the real form."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "user"}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], dict(ACCOUNT)
-    )
-    await hass.async_block_till_done()
-    assert result["type"] == "create_entry", result
-    return result["result"]
 
 
 async def restart(hass: HomeAssistant, entry: ConfigEntry) -> None:

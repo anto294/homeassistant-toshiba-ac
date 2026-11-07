@@ -23,29 +23,15 @@ from custom_components.toshiba_ac_link.toshiba.properties import (
 )
 
 from .conftest import ACCOUNT
-from .fake_toshiba import UNIT_ID, make_jwt, run_fake_toshiba
+from .fake_toshiba import (
+    UNIT_ID,
+    add_real_entry as add_entry,
+    make_jwt,
+    run_fake_toshiba,
+    wait_until,
+)
 
 REALTIME = "custom_components.toshiba_ac_link.toshiba.realtime"
-
-
-async def add_entry(hass: HomeAssistant) -> ConfigEntry:
-    """Add an account through the real form."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "user"}
-    )
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], dict(ACCOUNT)
-    )
-    await hass.async_block_till_done()
-    assert result["type"] == "create_entry", result
-    return result["result"]
-
-
-async def wait_until(condition, timeout: float = 3) -> None:
-    """Wait for something that happens on a real socket."""
-    async with asyncio.timeout(timeout):
-        while not condition():
-            await asyncio.sleep(0.01)
 
 
 async def the_unit(entry: ConfigEntry) -> ToshibaAcDevice:

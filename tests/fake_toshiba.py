@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 from collections import Counter
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 import json
@@ -14,9 +15,15 @@ from unittest.mock import patch
 
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestServer
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+
+from custom_components.toshiba_ac_link.const import DOMAIN
 
 UNIT_ID = "11111111-1111-1111-1111-111111111111"
+OTHER_UNIT_ID = "22222222-2222-2222-2222-222222222222"
 UNIT_STATE = "3144114131640010171bfe0b00001002000000"
+RUNNING_STATE = "3042124131640010171bfe0b00001002000000"
 
 
 # ---------------------------
@@ -181,6 +188,32 @@ class FakeToshiba:
                 },
             }
         )
+
+
+# ---------------------------
+#   add_real_entry
+# ---------------------------
+async def add_real_entry(hass: HomeAssistant) -> ConfigEntry:
+    """Add an account through the real form, with the real client."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "user"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"username": "user@example.com", "password": "secret"}
+    )
+    await hass.async_block_till_done()
+    assert result["type"] == "create_entry", result
+    return result["result"]
+
+
+# ---------------------------
+#   wait_until
+# ---------------------------
+async def wait_until(condition: Callable[[], bool], timeout: float = 3) -> None:
+    """Wait for something that happens on a real socket."""
+    async with asyncio.timeout(timeout):
+        while not condition():
+            await asyncio.sleep(0.01)
 
 
 # ---------------------------
