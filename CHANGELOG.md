@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [0.1.0b5] - 2026-11-07
+
 ### Changed
 
 - The description of the `reconnect` action no longer suggests that it only works within
