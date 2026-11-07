@@ -166,7 +166,12 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         supported = self.supported.for_ac_mode(future.ac_mode)
         if future.ac_fan_mode not in supported.ac_fan_mode:
             state.ac_fan_mode = ToshibaAcFanMode.NONE
-        if future.ac_swing_mode not in supported.ac_swing_mode:
+        # A per-axis command needs a unit that reported independent vanes, which proves
+        # the hardware even when the merit string does not declare these positions
+        if (
+            not state.uses_independent_swing
+            and future.ac_swing_mode not in supported.ac_swing_mode
+        ):
             state.ac_swing_mode = ToshibaAcSwingMode.NONE
         if future.ac_power_selection not in supported.ac_power_selection:
             state.ac_power_selection = ToshibaAcPowerSelection.NONE

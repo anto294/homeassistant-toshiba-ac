@@ -38,6 +38,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   those that name a wrong password.
 - The description of the reconnect action now says what it is for, and no longer mentions
   closing another connection.
+- On units that report independent vanes, a fixed vertical position or a horizontal
+  setting is no longer dropped from the command when the unit's data does not declare it.
 
 ### Security
 

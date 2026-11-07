@@ -325,3 +325,34 @@ async def test_connected_comes_from_the_channel() -> None:
     assert unit.connected is True
     connected[0] = False
     assert unit.connected is False
+
+
+@pytest.mark.parametrize(
+    ("setter", "value", "byte"),
+    [
+        ("set_ac_vertical_swing_mode", ToshibaAcVerticalSwingMode.FIXED_1, "b1"),
+        ("set_ac_horizontal_swing_mode", ToshibaAcHorizontalSwingMode.FIXED_2, "90"),
+    ],
+)
+async def test_a_unit_that_reported_independent_vanes_can_set_them(
+    setter, value, byte
+) -> None:
+    """Its report proves the hardware, even if its merit string does not declare it."""
+    unit = make_unit(merit="2c00")
+    await unit.async_update_state(INDEPENDENT)
+
+    await getattr(unit, setter)(value)
+
+    unit._send_command.assert_awaited_once()
+    assert unit._send_command.await_args.args[1][8:10] == byte
+    assert getattr(unit, setter.removeprefix("set_")) is value
+
+
+async def test_a_legacy_preset_the_unit_lacks_is_still_taken_out() -> None:
+    """Only a per-axis command, which needs that report, skips the check."""
+    unit = make_unit(merit="2c00")
+    await unit.async_update_state(INDEPENDENT)
+
+    await unit.set_ac_swing_mode(ToshibaAcSwingMode.FIXED_1)
+
+    assert sent_state(unit).ac_swing_mode is ToshibaAcSwingMode.NONE
