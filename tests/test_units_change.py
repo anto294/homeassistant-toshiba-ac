@@ -104,3 +104,112 @@ def test_a_unit_skipped_at_the_start_returns_when_it_can_be_read(run_in_hass) ->
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_a_unit_gone_from_two_answers_is_removed(run_in_hass) -> None:
+    """One answer could be a passing mistake, and removing loses the user's settings."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units.append(second_unit())
+            entry = await add_real_entry(hass)
+            registry = er.async_get(hass)
+            assert registry.async_get(BEDROOM) is not None
+
+            fake.units.pop()
+            await refresh(hass, entry)
+            assert has_device(hass, entry, OTHER_UNIT_ID)
+            assert fake.requests["channel"] == 1
+
+            await refresh(hass, entry)
+            assert not has_device(hass, entry, OTHER_UNIT_ID)
+            assert has_device(hass, entry, UNIT_ID)
+            assert registry.async_get(BEDROOM) is None
+            assert hass.states.get("climate.living_room") is not None
+            assert entry.state is ConfigEntryState.LOADED
+            assert fake.requests["channel"] == 2
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_a_unit_that_comes_back_between_answers_stays(run_in_hass) -> None:
+    """The two answers have to be in a row."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units.append(second_unit())
+            entry = await add_real_entry(hass)
+
+            fake.units.pop()
+            await refresh(hass, entry)
+            fake.units.append(second_unit())
+            await refresh(hass, entry)
+            fake.units.pop()
+            await refresh(hass, entry)
+
+            assert has_device(hass, entry, OTHER_UNIT_ID)
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_an_empty_list_removes_nothing(run_in_hass) -> None:
+    """An account does not lose all its units in the same moment, but a server can."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_real_entry(hass)
+            fake.units = []
+
+            for _ in range(3):
+                await refresh(hass, entry)
+
+            assert has_device(hass, entry, UNIT_ID)
+            assert fake.requests["channel"] == 1
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_a_list_with_an_unreadable_unit_removes_nothing(run_in_hass) -> None:
+    """The unit that looks gone could be the one that cannot be read."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units.append(second_unit())
+            entry = await add_real_entry(hass)
+
+            fake.units[1] = {"Id": "no other fields"}
+            for _ in range(3):
+                await refresh(hass, entry)
+
+            assert has_device(hass, entry, OTHER_UNIT_ID)
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_a_unit_that_left_while_stopped_is_removed_too(run_in_hass) -> None:
+    """The registry knows it, although this run never loaded it."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units.append(second_unit())
+            entry = await add_real_entry(hass)
+            await hass.config_entries.async_unload(entry.entry_id)
+
+            fake.units.pop()
+            guard = hass.data[guard_module._DATA_GUARD]
+            guard._data["cache"]["units"]["consumer-1"]["at"] = 0
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+            assert has_device(hass, entry, OTHER_UNIT_ID)
+
+            await refresh(hass, entry)
+            assert has_device(hass, entry, OTHER_UNIT_ID)
+            await refresh(hass, entry)
+            assert not has_device(hass, entry, OTHER_UNIT_ID)
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

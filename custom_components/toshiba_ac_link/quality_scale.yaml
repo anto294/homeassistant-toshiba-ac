@@ -79,8 +79,8 @@ rules:
     status: exempt
     comment: Nothing needs a repair. A rejected token uses reauthentication, and a block ends by itself.
   stale-devices:
-    status: todo
-    comment: A unit removed from the account can be deleted by hand, but is not removed automatically, although the list of units could tell.
+    status: done
+    comment: A unit missing from two lists in a row is removed, unless a list is empty or holds a unit that cannot be read. async_remove_config_entry_device allows deleting one sooner.
   # Platinum
   async-dependency: done
   inject-websession: done

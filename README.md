@@ -219,7 +219,7 @@ Results with other units are welcome in the [issues](https://github.com/anto294/
 - **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
 - **New units can take a while.** A unit you add to the account appears by itself within about 30 minutes. The `reconnect` action can bring it sooner, if the last list of units is more than 15 minutes old.
 - **Whole degrees only.** Toshiba's protocol has no half degrees.
-- **Removed units stay until you delete them.** After you remove a unit from the account, call the `reconnect` action or restart, up to 15 minutes later, then select **Delete** on the page of that device. A unit that is still on the account cannot be deleted.
+- **Removed units take a while to go.** A unit you remove from the account disappears by itself when two lists of units in a row no longer show it, usually within an hour. To delete it sooner, call the `reconnect` action or restart, up to 15 minutes later, then select **Delete** on the page of that device. A unit that is still on the account cannot be deleted.
 - **New units in the app only.** This integration cannot add units or change Wi-Fi settings.
 
 ## Troubleshooting
@@ -307,7 +307,7 @@ Home Assistant grades the integrations in its core with the [Integration Quality
 |---|---:|---:|---:|---:|
 | Bronze | 20 | 17 | 3 | 0 |
 | Silver | 10 | 9 | 1 | 0 |
-| Gold | 21 | 14 | 3 | 4 |
+| Gold | 21 | 15 | 3 | 3 |
 | Platinum | 3 | 3 | 0 | 0 |
 
 A tier needs every rule of that tier and the ones below it, so this project meets Bronze and Silver, and does not claim the others yet. The tests cover 99 percent of the code, and CI measures this on each run.

@@ -60,7 +60,8 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         device_id: str,
         login: LoginResult,
         on_auth_failed: Callable[[], None],
-        on_units_changed: Callable[[], None],
+        on_units_changed: Callable[[set[str]], None],
+        known_unit_ids: set[str],
     ) -> None:
         """Store the account. Nothing is requested before connect."""
         self._hass = hass
@@ -69,6 +70,8 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         self._consumer_id = login.consumer_id
         self._on_auth_failed = on_auth_failed
         self._on_units_changed = on_units_changed
+        self._known_unit_ids = known_unit_ids
+        self._missing_units: set[str] = set()
         self._api = ToshibaApi(session, guard, device_id, login)
         self._realtime = ToshibaRealtime(
             session,
@@ -155,6 +158,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
                 continue
             device.on_state_changed_callback.add(self._remember_state)
             self._devices[unit.ac_unique_id] = device
+            self._known_unit_ids.add(unit.ac_unique_id)
         if skipped:
             _LOGGER.warning(
                 "Skipping %d unit(s) with data that cannot be read, until they can be",
@@ -273,12 +277,27 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         await self._guard.async_cache(
             "units", self._consumer_id, {"at": time.time(), "groups": groups}
         )
-        units, _skipped = parse_units(groups)
+        units, skipped = parse_units(groups)
         for unit in units:
             if device := self._devices.get(unit.ac_unique_id):
                 await self._async_update_device(device, unit.state)
-        if any(self._is_new_and_readable(unit) for unit in units):
-            self._on_units_changed()
+        removed = self._units_gone_twice(units, skipped)
+        if removed or any(self._is_new_and_readable(unit) for unit in units):
+            self._on_units_changed(removed)
+
+    def _units_gone_twice(self, units: list[UnitInfo], skipped: int) -> set[str]:
+        """Return the known units that two answers in a row did not list.
+
+        Removing one loses what the user set on it, and a list can be wrong for a
+        moment. So an empty list, or one with a unit that cannot be read, says nothing.
+        """
+        if skipped or not units:
+            self._missing_units = set()
+            return set()
+        missing = self._known_unit_ids - {unit.ac_unique_id for unit in units}
+        removed = missing & self._missing_units
+        self._missing_units = missing
+        return removed
 
     def _is_new_and_readable(self, unit: UnitInfo) -> bool:
         """Return whether a reload would add this unit, which is the only reason for one."""

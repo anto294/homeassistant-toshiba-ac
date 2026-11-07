@@ -41,6 +41,13 @@ flowchart LR
     AC --> WPS
 ```
 
+## Units that join or leave
+
+Each list of units is compared with what is loaded. A unit that is new and can be read
+reloads the entry. A unit that two lists in a row leave out loses its device, entities and
+what the user set on them, so an empty list or one with an unreadable unit decides nothing.
+The registry also tells about a unit that left while Home Assistant was stopped.
+
 ## Realtime messages
 
 Each frame is a Web PubSub message from the group of one unit, with this in `data`:

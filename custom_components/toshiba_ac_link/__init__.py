@@ -7,7 +7,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.typing import ConfigType
@@ -44,6 +44,41 @@ async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
 
 
 # ---------------------------
+#   _registered_unit_ids
+# ---------------------------
+def _registered_unit_ids(hass: HomeAssistant, entry: ToshibaConfigEntry) -> set[str]:
+    """Return the units that the device registry holds for this entry."""
+    return {
+        unit_id
+        for device in dr.async_entries_for_config_entry(
+            dr.async_get(hass), entry.entry_id
+        )
+        for domain, unit_id in device.identifiers
+        if domain == DOMAIN
+    }
+
+
+# ---------------------------
+#   _async_units_changed
+# ---------------------------
+def _async_units_changed(
+    hass: HomeAssistant, entry: ToshibaConfigEntry, removed: set[str]
+) -> None:
+    """Remove the devices of units that left, and reload to match the account."""
+    registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if any(
+            domain == DOMAIN and unit_id in removed
+            for domain, unit_id in device.identifiers
+        ):
+            _LOGGER.info("Removing a unit that left the Toshiba account")
+            registry.async_update_device(
+                device.id, remove_config_entry_id=entry.entry_id
+            )
+    hass.config_entries.async_schedule_reload(entry.entry_id)
+
+
+# ---------------------------
 #   async_setup_entry
 # ---------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> bool:
@@ -63,7 +98,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> b
             entry.data["consumer_id"],
         ),
         lambda: entry.async_start_reauth(hass),
-        lambda: hass.config_entries.async_schedule_reload(entry.entry_id),
+        lambda removed: _async_units_changed(hass, entry, removed),
+        _registered_unit_ids(hass, entry),
     )
 
     try:

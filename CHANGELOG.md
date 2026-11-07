@@ -11,6 +11,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 - A unit added to the account now appears by itself within about 30 minutes, without a
   restart. The same goes for a unit that was skipped because its data could not be read.
+- A unit removed from the account now disappears by itself, once two lists of units in a
+  row no longer show it. An empty list, or one with a unit that cannot be read, removes
+  nothing.
 
 ### Changed
 
