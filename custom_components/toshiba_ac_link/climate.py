@@ -192,12 +192,11 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         await self._device.set_ac_status(ToshibaAcStatus.OFF)
 
     async def async_toggle(self) -> None:
-        """Toggle device status."""
-        state = self._device.ac_status
-        if state == ToshibaAcStatus.OFF:
-            await self.async_turn_on()
-        else:
+        """Toggle what the entity shows, which is off during self cleaning."""
+        if self.is_on:
             await self.async_turn_off()
+        else:
+            await self.async_turn_on()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new preset mode."""

@@ -462,3 +462,29 @@ def test_choosing_a_mode_on_a_running_unit_changes_only_the_mode(run_in_hass) ->
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_toggle_follows_what_the_entity_shows_during_self_cleaning(run_in_hass) -> None:
+    """A cleaning unit reports on and shows off, so toggling it has to turn it on."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = "3042124131640010171bfe0b00001802000000"
+            entry = await add_real_entry(hass)
+            assert hass.states.get(CLIMATE).state == "off"
+
+            await hass.services.async_call(
+                "climate", "toggle", {"entity_id": CLIMATE}, blocking=True
+            )
+
+            frame = fake.commands[0]["payload"]["data"]
+            assert frame.startswith("30")
+            assert hass.states.get(CLIMATE).state == "cool"
+
+            await hass.services.async_call(
+                "climate", "toggle", {"entity_id": CLIMATE}, blocking=True
+            )
+            assert fake.commands[1]["payload"]["data"].startswith("31")
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
