@@ -75,7 +75,8 @@ always merged. Measured on two accounts:
   it, and a slow answer from the unit must never lead to a repeat.
 - In the 8 °C mode the wire value is the target plus 16. A model 3 unit held it at 32, or
   16 °C, when sent more, so its limit is 16 although the app's code suggests 30. Model 2
-  accepted 10 and 13 °C, and more was not tried. Entering and leaving this mode does not
+  accepted 10 and 13 °C, and 14 and 16 °C from a client outside Home Assistant, whose limit
+  for this model stays at 13. Entering and leaving this mode does not
   change the wire value by itself, so 13 °C would become 29 °C. So `send_state_to_ac` sends
   a target with both: 8 °C, and then the earlier target or 20 °C. The earlier target is
   kept in memory for one visit to the mode, and is dropped once the state shows that the
