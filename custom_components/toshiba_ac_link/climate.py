@@ -241,8 +241,6 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set new target fan mode."""
         _LOGGER.info("Toshiba Climate setting fan_mode: %s", fan_mode)
-        if not self.is_on:
-            await self._device.set_ac_status(ToshibaAcStatus.ON)
         fan_mode = fan_mode.title().replace("_", " ")
         feature_list_id = get_feature_by_name(list(ToshibaAcFanMode), fan_mode)
         if feature_list_id is not None:

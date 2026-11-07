@@ -389,3 +389,27 @@ def test_a_first_connection_that_fails_is_logged_once(run_in_hass, caplog) -> No
                 await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_setting_the_fan_does_not_start_a_unit_that_is_off(run_in_hass) -> None:
+    """The setting is for the next run, like temperature."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_real_entry(hass)
+            assert hass.states.get(CLIMATE).state == "off"
+
+            await hass.services.async_call(
+                "climate",
+                "set_fan_mode",
+                {"entity_id": CLIMATE, "fan_mode": "Low"},
+                blocking=True,
+            )
+
+            assert len(fake.commands) == 1
+            assert fake.commands[0]["payload"]["data"].startswith("ffffff")
+            assert hass.states.get(CLIMATE).state == "off"
+            assert hass.states.get(CLIMATE).attributes["fan_mode"] == "Low"
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
