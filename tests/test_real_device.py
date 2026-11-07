@@ -336,3 +336,56 @@ def test_set_temperature_applies_the_hvac_mode_too(run_in_hass) -> None:
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_availability_is_logged_once_per_transition(run_in_hass, caplog) -> None:
+    """Many failed attempts make one line, and the way back makes another."""
+    lost = "Toshiba realtime channel is not available"
+    back = "Toshiba realtime channel is available again"
+
+    async def scenario(hass: HomeAssistant) -> None:
+        caplog.set_level(logging.INFO)
+        async with run_fake_toshiba() as fake:
+            with patch(f"{REALTIME}.RETRY_MIN_S", 0.02):
+                entry = await add_real_entry(hass)
+                unit = await the_unit(entry)
+                assert lost not in caplog.text and back not in caplog.text
+
+                fake.refuse_sockets = True
+                attempts = fake.requests["channel"]
+                await fake.sockets[-1].close()
+                await wait_until(lambda: not unit.connected)
+                await wait_until(lambda: fake.requests["channel"] >= attempts + 3)
+                assert caplog.text.count(lost) == 1
+                assert back not in caplog.text
+
+                fake.refuse_sockets = False
+                await wait_until(lambda: unit.connected)
+                assert caplog.text.count(back) == 1
+
+                # Stopping on purpose is no loss
+                await hass.config_entries.async_unload(entry.entry_id)
+                assert caplog.text.count(lost) == 1
+
+    run_in_hass(scenario)
+
+
+def test_a_first_connection_that_fails_is_logged_once(run_in_hass, caplog) -> None:
+    """The entities are unavailable from the start, so say so."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        caplog.set_level(logging.INFO)
+        async with run_fake_toshiba() as fake:
+            fake.refuse_sockets = True
+            with (
+                patch(f"{REALTIME}.RETRY_MIN_S", 0.02),
+                patch(f"{MANAGER}.FIRST_CONNECTION_WAIT_S", 0.01),
+            ):
+                entry = await add_real_entry(hass)
+                await wait_until(lambda: fake.requests["channel"] >= 3)
+                assert (
+                    caplog.text.count("Toshiba realtime channel is not available") == 1
+                )
+                await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

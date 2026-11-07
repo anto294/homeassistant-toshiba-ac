@@ -20,6 +20,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - The energy sensor now becomes unavailable and available again with the connection, like
   the other entities.
 - climate.set_temperature now applies the hvac_mode it is given, which it used to ignore.
+- Losing and regaining the connection to the Toshiba cloud is now logged once each, at
+  info level.
 
 ## [0.1.0b2] - 2026-11-07
 

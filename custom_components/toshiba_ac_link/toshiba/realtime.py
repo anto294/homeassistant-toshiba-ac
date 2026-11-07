@@ -50,6 +50,7 @@ class ToshibaRealtime:
         self._on_message = on_message
         self._on_connection = on_connection
         self.connected = False
+        self._reported_lost = False
 
     async def async_run(self) -> None:
         """Connect and reconnect until cancelled, or until the token is rejected."""
@@ -61,6 +62,7 @@ class ToshibaRealtime:
             except ToshibaAuthError:
                 raise
             except ToshibaBlockedError as ex:
+                self._report_lost()
                 _LOGGER.warning(
                     "Waiting %d seconds before the realtime channel: %s",
                     ex.retry_after,
@@ -71,6 +73,7 @@ class ToshibaRealtime:
             except (aiohttp.ClientError, TimeoutError, ToshibaError) as ex:
                 _LOGGER.debug("Realtime channel failed: %s", type(ex).__name__)
 
+            self._report_lost()
             if time.monotonic() - started >= STABLE_S:
                 wait = RETRY_MIN_S
             await asyncio.sleep(jitter(wait / 2, wait))
@@ -97,9 +100,20 @@ class ToshibaRealtime:
 
     def _set_connected(self, connected: bool) -> None:
         """Report a change of the connection."""
+        if connected and self._reported_lost:
+            self._reported_lost = False
+            _LOGGER.info("The Toshiba realtime channel is available again")
         if connected != self.connected:
             self.connected = connected
             self._on_connection(connected)
+
+    def _report_lost(self) -> None:
+        """Log the loss once, however many attempts fail. Not called on a stop."""
+        if not self._reported_lost:
+            self._reported_lost = True
+            _LOGGER.info(
+                "The Toshiba realtime channel is not available, and it retries by itself"
+            )
 
     def _handle(self, text: str) -> None:
         """Pass on a frame published by a unit. A bad frame must not end the channel."""
