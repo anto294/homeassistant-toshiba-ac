@@ -82,7 +82,7 @@
   "services": {
     "reconnect": {
       "name": "Neu verbinden",
-      "description": "Stellt für alle Einträge eine neue Verbindung zur Toshiba-Cloud her. Verwende dies, um ein neues Gerät zu übernehmen, bis zu 15 Minuten nachdem es dem Konto hinzugefügt wurde."
+      "description": "Stellt für alle Einträge eine neue Verbindung zur Toshiba-Cloud her. Ein neues Gerät erscheint von selbst: Verwende dies, damit es früher erscheint, wenn die letzte Geräteliste älter als 15 Minuten ist."
     }
   }
 }

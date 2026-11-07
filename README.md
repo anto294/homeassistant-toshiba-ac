@@ -150,7 +150,7 @@ These limits are saved on disk before each request, so restarting does not reset
 
 | Action | Description |
 |---|---|
-| `toshiba_ac_link.reconnect` | Makes a new connection to the Toshiba cloud for all entries. Use it to pick up a new unit, up to 15 minutes after adding it to the account |
+| `toshiba_ac_link.reconnect` | Makes a new connection to the Toshiba cloud for all entries. A new unit appears by itself: use this to bring it sooner, if the last list of units is more than 15 minutes old |
 
 All other control goes through the standard actions of the entities, such as `climate.set_temperature`.
 

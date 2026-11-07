@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Changed
+
+- The description of the `reconnect` action no longer suggests that it only works within
+  15 minutes of adding a unit. A new unit appears by itself, and the action brings it
+  sooner if the last list of units is more than 15 minutes old.
+
 ### Fixed
 
 - Choosing off on the outdoor unit silent mode or the fireplace mode no longer ends
