@@ -316,13 +316,19 @@ class ToshibaApi:
     async def async_send_command(self, message: dict[str, Any]) -> None:
         """Hand a command to Toshiba. Sending twice would repeat it, so this never retries."""
         data = await self._async_request("POST", COMMAND_PATH, json=message)
-        undelivered = [
-            *((data or {}).get("FailedTargetIds") or []),
-            *((data or {}).get("UnauthorizedTargetIds") or []),
-        ]
+        # Toshiba already accepted it, so an answer of another shape names no failure
+        answer = data if isinstance(data, dict) else {}
+        undelivered = sum(
+            len(targets)
+            for targets in (
+                answer.get("FailedTargetIds"),
+                answer.get("UnauthorizedTargetIds"),
+            )
+            if isinstance(targets, list)
+        )
         if undelivered:
             raise ToshibaCommandError(
-                f"Toshiba did not deliver the command to {len(undelivered)} unit(s)"
+                f"Toshiba did not deliver the command to {undelivered} unit(s)"
             )
 
     async def async_get_energy(self, unit_ids: list[str]) -> dict[str, int]:

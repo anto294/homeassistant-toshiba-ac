@@ -690,3 +690,63 @@ def test_an_action_for_a_mode_the_unit_lacks_fails_clearly(run_in_hass) -> None:
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        True,
+        "Success",
+        ["a"],
+        7,
+        None,
+        {"FailedTargetIds": True},
+        {"UnauthorizedTargetIds": "a"},
+    ],
+)
+def test_an_unexpected_answer_to_a_command_counts_as_delivered(
+    run_in_hass, answer
+) -> None:
+    """Toshiba said it succeeded, so the action must not fail, and nothing is repeated."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            fake.command_answer = answer
+            entry = await add_real_entry(hass)
+
+            await hass.services.async_call(
+                "climate",
+                "set_temperature",
+                {"entity_id": CLIMATE, "temperature": 24},
+                blocking=True,
+            )
+
+            assert fake.requests["command"] == 1
+            assert hass.states.get(CLIMATE).attributes["temperature"] == 24
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_an_answer_with_undelivered_units_still_fails(run_in_hass) -> None:
+    """Only a real list of units counts as a failure to deliver."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            fake.command_answer = {"FailedTargetIds": [UNIT_ID]}
+            entry = await add_real_entry(hass)
+
+            with pytest.raises(HomeAssistantError, match="did not deliver"):
+                await hass.services.async_call(
+                    "climate",
+                    "set_temperature",
+                    {"entity_id": CLIMATE, "temperature": 24},
+                    blocking=True,
+                )
+
+            assert fake.requests["command"] == 1
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

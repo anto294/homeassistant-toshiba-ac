@@ -20,6 +20,9 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - A unit reporting a mode outside its features can be turned on and off again. Every
   command used to fail with a raw error. A command that asks for a mode or status the unit
   lacks now fails with a clear message, and sends nothing.
+- A command that Toshiba accepted no longer fails in Home Assistant when the answer has an
+  unexpected shape. The action used to end with a raw error, and the entity did not
+  update, although the command had reached Toshiba.
 
 ## [0.1.0b4] - 2026-11-07
 

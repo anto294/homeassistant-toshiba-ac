@@ -51,7 +51,7 @@ class FakeToshiba:
         self.statuses: dict[str, int] = {}
         self.headers: dict[str, str] = {}
         self.commands: list[dict[str, Any]] = []
-        self.command_answer: dict[str, Any] = {"Status": "Success"}
+        self.command_answer: Any = {"Status": "Success"}
         self.passwords: list[str] = []
         self.good_password = "secret"
         self.token = make_jwt()
