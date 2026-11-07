@@ -1,0 +1,48 @@
+{
+    "entity": {
+        "binary_sensor": {
+            "self_cleaning": {
+                "default": "mdi:broom"
+            }
+        },
+        "select": {
+            "cdu_silent": {
+                "default": "mdi:home-sound-in-outline"
+            },
+            "fireplace": {
+                "default": "mdi:fireplace",
+                "state": {
+                    "off": "mdi:fireplace-off"
+                }
+            }
+        },
+        "switch": {
+            "8_degc_mode": {
+                "default": "mdi:snowflake-melt"
+            },
+            "air_purifier": {
+                "default": "mdi:air-purifier",
+                "state": {
+                    "off": "mdi:air-purifier-off"
+                }
+            },
+            "eco_mode": {
+                "default": "mdi:leaf"
+            },
+            "high_power_mode": {
+                "default": "mdi:lightning-bolt"
+            },
+            "wireless_led": {
+                "default": "mdi:led-on",
+                "state": {
+                    "off": "mdi:led-off"
+                }
+            }
+        }
+    },
+    "services": {
+        "reconnect": {
+            "service": "mdi:cloud-refresh"
+        }
+    }
+}

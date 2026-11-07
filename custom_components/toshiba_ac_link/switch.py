@@ -37,7 +37,6 @@ class ToshibaAcSwitchDescription(SwitchEntityDescription):
     """Describe a Toshiba AC switch entity type."""
 
     device_class = SwitchDeviceClass.SWITCH
-    off_icon: str | None = None
     requires_ac_on: bool = True
 
     async def async_turn_on(self, _device: ToshibaAcDevice):
@@ -126,7 +125,6 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
     ToshibaAcEnumSwitchDescription(
         key="8_degc_mode",
         translation_key="8_degc_mode",
-        icon="mdi:snowflake-melt",
         ac_attr_name="ac_merit_a",
         ac_on_value=ToshibaAcMeritA.HEATING_8C,
         ac_off_value=ToshibaAcMeritA.OFF,
@@ -134,8 +132,6 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
     ToshibaAcEnumSwitchDescription(
         key="air_purifier",
         translation_key="air_purifier",
-        icon="mdi:air-purifier",
-        off_icon="mdi:air-purifier-off",
         ac_attr_name="ac_air_pure_ion",
         ac_on_value=ToshibaAcAirPureIon.ON,
         ac_off_value=ToshibaAcAirPureIon.OFF,
@@ -143,7 +139,6 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
     ToshibaAcEnumSwitchDescription(
         key="eco_mode",
         translation_key="eco_mode",
-        icon="mdi:eco",
         ac_attr_name="ac_merit_a",
         ac_on_value=ToshibaAcMeritA.ECO,
         ac_off_value=ToshibaAcMeritA.OFF,
@@ -151,7 +146,6 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
     ToshibaAcEnumSwitchDescription(
         key="high_power_mode",
         translation_key="high_power_mode",
-        icon="mdi:high-power",
         ac_attr_name="ac_merit_a",
         ac_on_value=ToshibaAcMeritA.HIGH_POWER,
         ac_off_value=ToshibaAcMeritA.OFF,
@@ -159,8 +153,6 @@ _SWITCH_DESCRIPTIONS: Sequence[ToshibaAcSwitchDescription] = [
     ToshibaAcWirelessLedSwitchDescription(
         key="wireless_led",
         translation_key="wireless_led",
-        icon="mdi:led-on",
-        off_icon="mdi:led-off",
         entity_category=EntityCategory.CONFIG,
         requires_ac_on=False,
     ),
@@ -217,13 +209,6 @@ class ToshibaAcSwitchEntity(ToshibaAcStateEntity, SwitchEntity):
                 self._device.supported.for_ac_mode(self._device.ac_mode)
             )
         )
-
-    @property
-    def icon(self):
-        """Return the icon."""
-        if self.entity_description.off_icon and not self.is_on:
-            return self.entity_description.off_icon
-        return super().icon
 
     @property
     def is_on(self) -> bool | None:

@@ -30,8 +30,6 @@ TEnum = TypeVar("TEnum", bound=Enum)
 class ToshibaAcSelectDescription(SelectEntityDescription):
     """Describe a Toshiba AC select entity type."""
 
-    icon_mapping: dict[str, str] = field(default_factory=dict)
-
     async def async_select_option_name(self, device: ToshibaAcDevice, name: str):
         """Select the provided option."""
         pass
@@ -106,8 +104,6 @@ class ToshibaAcEnumSelectDescription(
 _SELECT_DESCRIPTIONS: Sequence[ToshibaAcSelectDescription] = [
     ToshibaAcEnumSelectDescription(
         key="cdu_silent",
-        icon="mdi:home-sound-in-outline",
-        icon_mapping={},
         translation_key="cdu_silent",
         ac_attr_name="ac_merit_a",
         values=[
@@ -120,8 +116,6 @@ _SELECT_DESCRIPTIONS: Sequence[ToshibaAcSelectDescription] = [
     ToshibaAcEnumSelectDescription(
         key="fireplace",
         translation_key="fireplace",
-        icon="mdi:fireplace",
-        icon_mapping={"off": "mdi:fireplace-off"},
         ac_attr_name="ac_merit_b",
         values=[
             ToshibaAcMeritB.OFF,
@@ -187,11 +181,3 @@ class ToshibaAcSelectEntity(ToshibaAcStateEntity, SelectEntity):
         """Return True if the entity is available."""
         features = self._device.supported.for_ac_mode(self._device.ac_mode)
         return super().available and self.entity_description.is_supported(features)
-
-    @property
-    def icon(self):
-        """Return the icon to use in the frontend, if any."""
-        if not self.current_option:
-            return self.entity_description.icon
-        mapped = self.entity_description.icon_mapping.get(self.current_option)
-        return mapped or self.entity_description.icon
