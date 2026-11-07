@@ -7,3 +7,6 @@ __pycache__/
 venv/
 .coverage
 .mypy_cache/
+
+# Toshiba app packages, for local analysis only: never commit or publish them
+apk/
