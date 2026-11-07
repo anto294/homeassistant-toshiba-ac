@@ -41,14 +41,12 @@ class ToshibaRealtime:
         self,
         session: aiohttp.ClientSession,
         get_url: Callable[[], Awaitable[str]],
-        forget_url: Callable[[], Awaitable[None]],
         on_message: MessageHandler,
         on_connection: Callable[[bool], None],
     ) -> None:
         """Store what the channel needs."""
         self._session = session
         self._get_url = get_url
-        self._forget_url = forget_url
         self._on_message = on_message
         self._on_connection = on_connection
         self.connected = False
@@ -70,10 +68,6 @@ class ToshibaRealtime:
                 )
                 await asyncio.sleep(ex.retry_after)
                 continue
-            except aiohttp.WSServerHandshakeError as ex:
-                _LOGGER.debug("Realtime channel refused, HTTP %s", ex.status)
-                # The address may be out of date: the next attempt asks for a new one
-                await self._forget_url()
             except (aiohttp.ClientError, TimeoutError, ToshibaError) as ex:
                 _LOGGER.debug("Realtime channel failed: %s", type(ex).__name__)
 
@@ -83,7 +77,11 @@ class ToshibaRealtime:
             wait = min(wait * 2, RETRY_MAX_S)
 
     async def _async_connect_once(self) -> None:
-        """Hold one connection for as long as it lasts."""
+        """Hold one connection for as long as it lasts.
+
+        An address works for one connection: Toshiba's service answers 401 to a second
+        one, even before it expires. So each attempt asks for a new address.
+        """
         url = await self._get_url()
         async with self._session.ws_connect(
             url, protocols=(SUBPROTOCOL,), heartbeat=PING_S

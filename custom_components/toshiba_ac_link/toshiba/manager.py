@@ -40,9 +40,6 @@ REFRESH_MIN_S = 5 * 60
 # Energy is a yearly total that does not change faster than this
 ENERGY_S = 60 * 60
 
-# An address for the socket is not reused this close to its expiry
-CHANNEL_MARGIN_S = 60
-
 FIRST_CONNECTION_WAIT_S = 10
 
 
@@ -70,8 +67,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         self._api = ToshibaApi(session, guard, device_id, login)
         self._realtime = ToshibaRealtime(
             session,
-            self._async_channel_url,
-            self._async_forget_channel,
+            self._api.async_get_channel_url,
             self._handle_message,
             self._handle_connection,
         )
@@ -164,24 +160,6 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
             await self._realtime.async_run()
         except ToshibaAuthError:
             self._on_auth_failed()
-
-    async def _async_channel_url(self) -> str:
-        """Return an address for the socket, without a request if one is still good."""
-        cached = self._guard.cached("channel", self._consumer_id)
-        if cached and cached["expires_at"] - time.time() > CHANNEL_MARGIN_S:
-            url: str = cached["url"]
-            return url
-        channel = await self._api.async_get_channel()
-        await self._guard.async_cache(
-            "channel",
-            self._consumer_id,
-            {"url": channel.url, "expires_at": channel.expires_at},
-        )
-        return channel.url
-
-    async def _async_forget_channel(self) -> None:
-        """Stop reusing the address that was refused."""
-        await self._guard.async_cache("channel", self._consumer_id, None)
 
     def _handle_connection(self, connected: bool) -> None:
         """Update the entities, and catch up on what the channel may have missed."""

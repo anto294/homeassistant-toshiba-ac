@@ -51,6 +51,7 @@ class FakeToshiba:
         self.units: list[dict[str, Any]] = [self.unit()]
         self.sockets: list[web.WebSocketResponse] = []
         self.refuse_sockets = False
+        self.channel_tokens: set[str] = set()
         self.base_url = ""
 
     @staticmethod
@@ -116,9 +117,11 @@ class FakeToshiba:
         if refusal := self._refusal("channel"):
             return refusal
         expires = datetime.now(UTC) + timedelta(minutes=15)
+        token = f"secret-url-{self.requests['channel']}"
+        self.channel_tokens.add(token)
         return self._answer(
             {
-                "Url": self.base_url.replace("http", "ws") + "/socket?token=secret-url",
+                "Url": f"{self.base_url.replace('http', 'ws')}/socket?token={token}",
                 "ExpiresAt": expires.isoformat().replace("+00:00", "1+00:00"),
                 "Groups": [UNIT_ID],
             }
@@ -144,8 +147,11 @@ class FakeToshiba:
 
     async def socket(self, request: web.Request) -> web.StreamResponse:
         """Hold a realtime socket."""
-        if self.refuse_sockets:
+        # An address works once, as on the real service
+        token = request.query.get("token")
+        if self.refuse_sockets or token not in self.channel_tokens:
             return web.Response(status=401)
+        self.channel_tokens.remove(token)
         socket = web.WebSocketResponse(protocols=("json.webpubsub.azure.v1",))
         await socket.prepare(request)
         self.sockets.append(socket)

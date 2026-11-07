@@ -183,15 +183,9 @@ class ToshibaGuard:
         )
         return cached
 
-    async def async_cache(
-        self, kind: str, account: str, value: dict[str, Any] | None
-    ) -> None:
-        """Save an answer of this account, or forget it."""
-        kinds = self._data.setdefault("cache", {}).setdefault(kind, {})
-        if value is None:
-            kinds.pop(account, None)
-        else:
-            kinds[account] = value
+    async def async_cache(self, kind: str, account: str, value: dict[str, Any]) -> None:
+        """Save an answer of this account."""
+        self._data.setdefault("cache", {}).setdefault(kind, {})[account] = value
         await self._async_save()
 
     def diagnostics(self) -> dict[str, Any]:

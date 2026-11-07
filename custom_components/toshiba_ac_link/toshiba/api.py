@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 import json
 import logging
 import time
@@ -50,17 +50,6 @@ class LoginResult:
     access_token: str
     token_type: str
     consumer_id: str
-
-
-# ---------------------------
-#   ChannelToken
-# ---------------------------
-@dataclass(frozen=True)
-class ChannelToken:
-    """Where to open the realtime socket, and until when that address is accepted."""
-
-    url: str
-    expires_at: float
 
 
 # ---------------------------
@@ -299,16 +288,14 @@ class ToshibaApi:
             raise ToshibaConnectionError(f"{MAPPING_PATH}: unexpected answer")
         return groups
 
-    async def async_get_channel(self) -> ChannelToken:
-        """Return a new address for the realtime socket."""
+    async def async_get_channel_url(self) -> str:
+        """Return a new address for the realtime socket, good for one connection."""
         data = await self._async_request("POST", CHANNEL_PATH, json={})
         try:
-            expires = datetime.fromisoformat(data["ExpiresAt"])
-            if expires.tzinfo is None:
-                expires = expires.replace(tzinfo=UTC)
-            return ChannelToken(data["Url"], expires.timestamp())
-        except (KeyError, TypeError, ValueError) as ex:
+            url: str = data["Url"]
+        except (KeyError, TypeError) as ex:
             raise ToshibaConnectionError(f"{CHANNEL_PATH}: unexpected answer") from ex
+        return url
 
     async def async_send_command(self, message: dict[str, Any]) -> None:
         """Hand a command to Toshiba. Sending twice would repeat it, so this never retries."""

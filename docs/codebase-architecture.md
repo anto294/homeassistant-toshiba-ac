@@ -56,11 +56,13 @@ always merged. Measured on two accounts:
 - A socket stayed open and kept receiving after its 15-minute token expired. The token
   only opens the connection. Longer than 20 minutes is untested, and the client simply
   reconnects if the server closes.
+- A socket address works for one connection. A second one gets HTTP 401, even before the
+  address expires, so addresses are never reused.
 - Heartbeats are irregular: 6 in 20 minutes across 5 units. They say nothing about
   availability, so a ping checks the socket instead.
-- A command from this client was echoed within a second, twice. Changes made in the app
-  arrived 90 to 100 seconds after the time in their own messages, four times. The cause
-  of the difference is unknown. A command updates the state as soon as Toshiba accepts
+- A command from this client was echoed within a second, and reached another client in
+  about a second. Changes made in the app arrived 90 to 100 seconds after the time in
+  their own messages, four times. The cause of the difference is unknown. A command updates the state as soon as Toshiba accepts
   it, and a slow answer from the unit must never lead to a repeat.
 - The app and another client can be connected to one account at the same time.
 - The timestamps of a unit's own messages are about an hour ahead, and off by tens of

@@ -66,8 +66,8 @@ def test_the_password_is_not_stored(run_in_hass) -> None:
     run_in_hass(scenario)
 
 
-def test_fifty_restarts_make_no_login_and_reuse_the_answers(run_in_hass) -> None:
-    """A loop of restarts costs what one start costs."""
+def test_fifty_restarts_make_no_login_and_reuse_the_units(run_in_hass) -> None:
+    """A restart only asks for the socket address, which works for one connection."""
 
     async def scenario(hass: HomeAssistant) -> None:
         async with run_fake_toshiba() as fake:
@@ -79,22 +79,20 @@ def test_fifty_restarts_make_no_login_and_reuse_the_answers(run_in_hass) -> None
                 await restart(hass, entry)
                 assert entry.state is ConfigEntryState.LOADED
 
-            assert fake.requests == {"login": 1, "mapping": 1, "channel": 1}
+            assert fake.requests == {"login": 1, "mapping": 1, "channel": 51}
+            assert len(fake.sockets) == 51
             await unload(hass, entry)
 
     run_in_hass(scenario)
 
 
 def test_restarts_cannot_exceed_the_hourly_budget(run_in_hass) -> None:
-    """Even when every answer is out of date, the disk stops the requests."""
+    """Even when the list of units is out of date, the disk stops the requests."""
 
     async def scenario(hass: HomeAssistant) -> None:
         async with run_fake_toshiba() as fake:
             entry = await add_entry(hass)
-            with (
-                patch(f"{MANAGER}.UNITS_CACHE_S", 0),
-                patch(f"{MANAGER}.CHANNEL_MARGIN_S", 10**6),
-            ):
+            with patch(f"{MANAGER}.UNITS_CACHE_S", 0):
                 for _ in range(HOURLY_REQUEST_BUDGET):
                     await restart(hass, entry)
             assert fake.total <= HOURLY_REQUEST_BUDGET

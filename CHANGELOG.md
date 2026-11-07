@@ -7,6 +7,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+
+- A restart no longer loses about 10 seconds and a request trying to reuse the address of
+  the realtime channel, which works for one connection only.
+
 ## [0.1.0b1] - 2026-11-07
 
 The first version of Toshiba Link. It is a separate integration with its own
@@ -30,7 +35,7 @@ and includes work from version 2026.10.0 of
 - Horizontal swing on units with independent vanes.
 - Limits that protect the account and survive restarts: at most 120 requests per hour,
   a wait of 15 minutes or more when Toshiba asks to slow down, and at most 3 failed logins
-  per hour. A loop of restarts costs what one start costs.
+  per hour. A restart costs one request, or two after 15 minutes.
 - Italian translation, icons in `icons.json`, and the brand images inside the integration.
 
 ### Changed

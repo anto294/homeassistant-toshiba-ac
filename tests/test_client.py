@@ -144,7 +144,7 @@ def test_bad_frames_do_not_end_the_channel(run_in_hass) -> None:
 
 
 def test_a_lost_socket_makes_entities_unavailable_and_reconnects(run_in_hass) -> None:
-    """The address is reused, so reconnecting costs no channel request."""
+    """An address works once, so each reconnection asks for a new one."""
 
     async def scenario(hass: HomeAssistant) -> None:
         async with run_fake_toshiba() as fake:
@@ -165,14 +165,14 @@ def test_a_lost_socket_makes_entities_unavailable_and_reconnects(run_in_hass) ->
                 await hass.async_block_till_done()
                 state = hass.states.get("climate.living_room")
                 assert state is not None and state.state != "unavailable"
-                assert fake.requests["channel"] == 1
+                assert fake.requests["channel"] == 2
                 await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
 
 
-def test_a_refused_socket_asks_for_a_new_address_and_waits_longer(run_in_hass) -> None:
-    """A refused address is replaced, with waits that grow."""
+def test_a_refused_socket_waits_longer_each_time(run_in_hass) -> None:
+    """Each attempt costs one request, so the waits have to grow."""
 
     async def scenario(hass: HomeAssistant) -> None:
         async with run_fake_toshiba() as fake:

@@ -116,7 +116,7 @@ Outside the 8 °C mode, the target temperature goes from 17 to 30 °C. Except fo
 Toshiba limits requests and locks accounts after failed logins, without saying where the limits are. This integration is built around that, although nothing can guarantee that Toshiba never blocks an account:
 
 - It logs in only when you send a form, so a restart can never repeat a login.
-- A restart reuses the recent answers, and a loop of restarts costs what one start costs.
+- A restart reuses a recent list of units, so it costs one request, for opening the channel.
 - If Toshiba asks to slow down, all requests stop for at least 15 minutes, even across restarts.
 - It stays below 120 requests per hour, and the form stops after 3 failed logins in an hour.
 

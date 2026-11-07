@@ -15,7 +15,7 @@ trouble.
 |------------|---------------|---------|--------|
 | Username and password | The form | `POST /api/Consumer/Login` | Username only, in the entry |
 | Access token, a JWT that lasts about two years | The login | Every HTTPS request | In the entry |
-| Socket address, with its own token, for about 15 minutes | `POST /api/RealTime/GetWebPubSubToken` | Azure Web PubSub | In the guard's private storage |
+| Socket address, with its own token, good for one connection | `POST /api/RealTime/GetWebPubSubToken` | Azure Web PubSub | Nowhere |
 
 **The password is not stored.** It has no use after the login, and what is not stored
 cannot be retried. When a token stops working, Home Assistant asks for the password.
@@ -38,10 +38,8 @@ sequenceDiagram
         HA->>REST: GET /api/AC/GetConsumerACMapping
         REST-->>HA: units, with the state of each
     end
-    opt no socket address that is still valid
-        HA->>REST: POST /api/RealTime/GetWebPubSubToken
-        REST-->>HA: Url, ExpiresAt, Groups
-    end
+    HA->>REST: POST /api/RealTime/GetWebPubSubToken
+    REST-->>HA: Url, ExpiresAt, Groups
     HA->>WPS: WebSocket, subprotocol json.webpubsub.azure.v1
     AC-->>WPS: state and heartbeats
     WPS-->>HA: CMD_FCU_FROM_AC, CMD_HEARTBEAT
@@ -58,7 +56,7 @@ sequenceDiagram
 |----------|--------|------|
 | `/api/Consumer/Login` | POST | When the user sends a form, and never otherwise |
 | `/api/AC/GetConsumerACMapping` | GET | At a start without a recent list, about every 30 minutes, and after a reconnection, at most every 5 minutes |
-| `/api/RealTime/GetWebPubSubToken` | POST | When the socket has to open and has no valid address |
+| `/api/RealTime/GetWebPubSubToken` | POST | Each time the socket opens, since an address works for one connection |
 | `/api/IoTHub/SendCommand` | POST | Once per command |
 | `/api/AC/GetGroupACEnergyConsumption` | POST | At most hourly, only if a unit reports energy |
 
@@ -83,7 +81,7 @@ restart starts with what it knew, so restarting cannot reset them.
 | HTTP 401 | The token is never sent again, and Home Assistant asks for the password |
 | A token that says it expired | The same, without a request |
 | 3 failed logins in an hour on one account | The form says to try later, and sends nothing |
-| A restart | Reuses a list of units up to 15 minutes old, a socket address that is still valid, and an energy reading up to an hour old |
+| A restart | Reuses a list of units up to 15 minutes old and an energy reading up to an hour old, so it costs one request for the socket address, or two after 15 minutes |
 
 `tests/test_account_safety.py` proves these against a local server that counts requests.
 Keep it passing, and extend it with any new request.
