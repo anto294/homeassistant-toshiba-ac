@@ -29,6 +29,7 @@ from custom_components.toshiba_ac_link.toshiba.properties import (
     ToshibaAcWirelessLed,
 )
 
+from .conftest import assert_translated
 from .fake_toshiba import RUNNING_STATE, UNIT_STATE
 
 INDEPENDENT = "ffffffff" + "b0" + "ff" * 17
@@ -97,9 +98,10 @@ async def test_a_mode_that_the_unit_lacks_is_refused() -> None:
     """Merit bits can say that a unit only heats, and no command should leave then."""
     unit = make_unit(merit="0100")
 
-    with pytest.raises(HomeAssistantError, match="Unit cannot use the mode COOL"):
+    with pytest.raises(HomeAssistantError) as raised:
         await unit.set_ac_mode(ToshibaAcMode.COOL)
 
+    assert_translated(raised.value, "unsupported_mode", unit="Unit", mode="COOL")
     unit._send_command.assert_not_awaited()
     assert unit.ac_mode is ToshibaAcMode.COOL
 
@@ -109,8 +111,10 @@ async def test_a_status_that_the_unit_lacks_is_refused() -> None:
     unit = make_unit()
     unit.supported.ac_status.remove(ToshibaAcStatus.OFF)
 
-    with pytest.raises(HomeAssistantError, match="Unit cannot use the status OFF"):
+    with pytest.raises(HomeAssistantError) as raised:
         await unit.set_ac_status(ToshibaAcStatus.OFF)
+
+    assert_translated(raised.value, "unsupported_status", unit="Unit", status="OFF")
 
     unit._send_command.assert_not_awaited()
     assert unit.ac_status is ToshibaAcStatus.ON

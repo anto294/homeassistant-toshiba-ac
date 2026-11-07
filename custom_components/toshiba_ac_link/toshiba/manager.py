@@ -22,6 +22,7 @@ from .errors import (
     ToshibaBlockedError,
     ToshibaConnectionError,
     ToshibaError,
+    translation_of,
 )
 from .guard import ToshibaGuard, jitter
 from .properties import ToshibaAcDeviceEnergyConsumption
@@ -270,10 +271,10 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         except ToshibaAuthError as ex:
             self._echo_arrived(message_id)
             self._on_auth_failed()
-            raise HomeAssistantError("Toshiba rejected the login") from ex
+            raise HomeAssistantError(**translation_of(ex)) from ex
         except ToshibaError as ex:
             self._echo_arrived(message_id)
-            raise HomeAssistantError(f"Command not sent: {ex}") from ex
+            raise HomeAssistantError(**translation_of(ex)) from ex
 
     def _stop_echo_timer(self) -> None:
         """Stop waiting for now."""

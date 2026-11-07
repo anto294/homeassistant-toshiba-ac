@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import math
+from typing import Any
+
+from ..const import DOMAIN
+
 
 # ---------------------------
 #   ToshibaError
@@ -48,3 +53,29 @@ class ToshibaLoginLimitError(ToshibaBlockedError):
 # ---------------------------
 class ToshibaCommandError(ToshibaError):
     """Toshiba did not deliver a command to its unit."""
+
+
+# ---------------------------
+#   translation_of
+# ---------------------------
+def translation_of(error: ToshibaError) -> dict[str, Any]:
+    """Return the arguments that show an error to a user, in the user's language.
+
+    The text of an error of this client stays in English, for the log. It can name
+    details that mean nothing to a user, so it is not a placeholder.
+    """
+    placeholders: dict[str, str] = {}
+    if isinstance(error, ToshibaAuthError):
+        key = "token_rejected"
+    elif isinstance(error, ToshibaBlockedError):
+        key = "blocked"
+        placeholders["minutes"] = str(max(1, math.ceil(error.retry_after / 60)))
+    elif isinstance(error, ToshibaCommandError):
+        key = "command_not_delivered"
+    else:
+        key = "cannot_connect"
+    return {
+        "translation_domain": DOMAIN,
+        "translation_key": key,
+        "translation_placeholders": placeholders,
+    }

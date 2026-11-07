@@ -19,7 +19,7 @@ from custom_components.toshiba_ac_link.toshiba.errors import (
     ToshibaConnectionError,
 )
 
-from .conftest import async_add_entry, make_manager
+from .conftest import assert_translated, async_add_entry, make_manager
 
 MANAGER = "custom_components.toshiba_ac_link.ToshibaAcDeviceManager"
 
@@ -127,12 +127,13 @@ def test_reconnect_action_reports_an_entry_that_did_not_load(
         failing.connect = AsyncMock(side_effect=error)
         with (
             patch(MANAGER, return_value=failing),
-            pytest.raises(HomeAssistantError, match="1 of 1") as raised,
+            pytest.raises(HomeAssistantError) as raised,
         ):
             await hass.services.async_call(DOMAIN, "reconnect", blocking=True)
         await hass.async_block_till_done()
 
         assert entry.state is not ConfigEntryState.LOADED
+        assert_translated(raised.value, "entries_not_loaded", failed="1", total="1")
         assert "user@example.com" not in str(raised.value)
 
     run_in_hass(scenario)

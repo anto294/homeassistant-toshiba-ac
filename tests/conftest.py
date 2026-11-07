@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable, Iterator
+import json
+from pathlib import Path
+import re
 import tempfile
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import ThreadedResolver
 from homeassistant import config_entries, loader
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import (
     area_registry,
     category_registry,
@@ -62,6 +66,24 @@ def _resolver_without_zeroconf() -> Iterator[None]:
         lambda _hass: _ClosableResolver(),
     ):
         yield
+
+
+# ---------------------------
+#   assert_translated
+# ---------------------------
+def assert_translated(error: Exception, key: str, **placeholders: str) -> None:
+    """Check that an error has its translation key, and all that its text needs."""
+    assert isinstance(error, HomeAssistantError)
+    assert error.translation_domain == DOMAIN
+    assert error.translation_key == key
+    assert (error.translation_placeholders or {}) == placeholders
+    strings = json.loads(
+        (
+            Path(__file__).parent.parent / "custom_components" / DOMAIN / "strings.json"
+        ).read_text(encoding="utf-8")
+    )
+    text = strings["exceptions"][key]["message"]
+    assert set(re.findall(r"{(\w+)}", text)) == set(placeholders)
 
 
 # ---------------------------

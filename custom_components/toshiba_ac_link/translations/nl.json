@@ -79,6 +79,29 @@
       }
     }
   },
+  "exceptions": {
+    "blocked": {
+      "message": "Verzoeken aan Toshiba zijn gepauzeerd om je account te beschermen. Probeer het over ongeveer {minutes} min. opnieuw."
+    },
+    "cannot_connect": {
+      "message": "De Toshiba-cloud is niet bereikbaar, of het antwoord is niet bruikbaar."
+    },
+    "command_not_delivered": {
+      "message": "Toshiba heeft de opdracht niet bij de unit afgeleverd. De opdracht is niet opnieuw verzonden."
+    },
+    "entries_not_loaded": {
+      "message": "{failed} van {total} Toshiba-items zijn niet geladen. De integratiepagina toont wat ze nodig hebben, en de meeste proberen het vanzelf opnieuw."
+    },
+    "token_rejected": {
+      "message": "Toshiba heeft de opgeslagen aanmelding geweigerd. Voer het wachtwoord in wanneer Home Assistant erom vraagt, onder Instellingen → Apparaten & diensten."
+    },
+    "unsupported_mode": {
+      "message": "{unit} ondersteunt de modus {mode} niet."
+    },
+    "unsupported_status": {
+      "message": "{unit} ondersteunt de status {status} niet."
+    }
+  },
   "services": {
     "reconnect": {
       "name": "Opnieuw verbinden",

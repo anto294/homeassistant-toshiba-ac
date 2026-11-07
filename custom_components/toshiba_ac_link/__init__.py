@@ -18,7 +18,12 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
 from .toshiba.api import LoginResult
-from .toshiba.errors import ToshibaAuthError, ToshibaBlockedError, ToshibaError
+from .toshiba.errors import (
+    ToshibaAuthError,
+    ToshibaBlockedError,
+    ToshibaError,
+    translation_of,
+)
 from .toshiba.guard import async_get_guard
 from .toshiba.manager import ToshibaAcDeviceManager
 
@@ -48,8 +53,12 @@ async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
         ]
         if failed := results.count(False):
             raise HomeAssistantError(
-                f"{failed} of {len(entries)} Toshiba entries did not load. "
-                "The integration page shows what they need, and most retry by themselves"
+                translation_domain=DOMAIN,
+                translation_key="entries_not_loaded",
+                translation_placeholders={
+                    "failed": str(failed),
+                    "total": str(len(entries)),
+                },
             )
 
     hass.services.async_register(DOMAIN, "reconnect", handle_reconnect)
@@ -118,12 +127,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ToshibaConfigEntry) -> b
     try:
         await manager.connect()
     except ToshibaAuthError as ex:
-        raise ConfigEntryAuthFailed(str(ex)) from ex
+        raise ConfigEntryAuthFailed(**translation_of(ex)) from ex
     except ToshibaBlockedError as ex:
         # Without retry_after, Home Assistant would try again within 10 minutes
-        raise ConfigEntryNotReady(str(ex), retry_after=ex.retry_after) from ex
+        raise ConfigEntryNotReady(
+            retry_after=ex.retry_after, **translation_of(ex)
+        ) from ex
     except ToshibaError as ex:
-        raise ConfigEntryNotReady(str(ex)) from ex
+        raise ConfigEntryNotReady(**translation_of(ex)) from ex
 
     entry.runtime_data = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

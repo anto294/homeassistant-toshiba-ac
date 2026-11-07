@@ -79,6 +79,29 @@
       }
     }
   },
+  "exceptions": {
+    "blocked": {
+      "message": "Le richieste a Toshiba sono sospese per proteggere il tuo account. Riprova tra circa {minutes} min."
+    },
+    "cannot_connect": {
+      "message": "Impossibile raggiungere il cloud Toshiba, oppure la sua risposta non è utilizzabile."
+    },
+    "command_not_delivered": {
+      "message": "Toshiba non ha consegnato il comando all'unità. Il comando non è stato inviato di nuovo."
+    },
+    "entries_not_loaded": {
+      "message": "{failed} voci Toshiba su {total} non si sono caricate. La pagina dell'integrazione mostra cosa serve, e la maggior parte riprova da sola."
+    },
+    "token_rejected": {
+      "message": "Toshiba ha rifiutato l'accesso salvato. Inserisci la password quando Home Assistant la chiede, in Impostazioni → Dispositivi e servizi."
+    },
+    "unsupported_mode": {
+      "message": "{unit} non supporta la modalità {mode}."
+    },
+    "unsupported_status": {
+      "message": "{unit} non supporta lo stato {status}."
+    }
+  },
   "services": {
     "reconnect": {
       "name": "Riconnetti",

@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Changed
+
+- Errors that Home Assistant shows, from actions and on the integration page, are now in
+  the language of the user, in English, German, Italian and Dutch. A wait after Toshiba
+  asks to slow down is shown in minutes.
+
 ## [0.1.0] - 2026-11-07
 
 The first stable version of Toshiba Link. It is a separate integration with its own

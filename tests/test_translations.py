@@ -31,6 +31,16 @@ def _load(path):
 
 SOURCE = _load(COMPONENT / "strings.json")
 
+EXCEPTIONS = {
+    "blocked": ["minutes"],
+    "cannot_connect": [],
+    "command_not_delivered": [],
+    "entries_not_loaded": ["failed", "total"],
+    "token_rejected": [],
+    "unsupported_mode": ["unit", "mode"],
+    "unsupported_status": ["unit", "status"],
+}
+
 
 def test_all_languages_are_checked():
     """A language that goes missing would pass the other tests."""
@@ -54,6 +64,30 @@ def test_placeholders_are_the_same_in_each_text(language):
         assert set(re.findall(r"{(\w+)}", texts[key])) == set(
             re.findall(r"{(\w+)}", text)
         ), key
+
+
+def test_each_error_for_users_has_a_message_with_its_placeholders():
+    """The code raises these keys, and a missing text shows the bare key."""
+    messages = {
+        key.split(".")[1]: re.findall(r"{(\w+)}", text)
+        for key, text in SOURCE.items()
+        if key.startswith("exceptions.")
+    }
+
+    assert messages == EXCEPTIONS
+    assert all(key.endswith(".message") for key in SOURCE if "exceptions." in key)
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_each_language_can_format_the_errors(language):
+    """A broken brace in a translation only fails when the error happens."""
+    texts = _load(COMPONENT / "translations" / language)
+
+    for key, placeholders in EXCEPTIONS.items():
+        text = texts[f"exceptions.{key}.message"].format(
+            **dict.fromkeys(placeholders, "x")
+        )
+        assert text and "{" not in text
 
 
 def test_english_file_is_the_same_as_strings_json():

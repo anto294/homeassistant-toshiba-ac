@@ -132,6 +132,11 @@ it, but without the socket the state could be out of date. It also depends on th
 
 ## Error handling
 
+An error that reaches a user is a `HomeAssistantError` or one of its subclasses, with a
+translation key from the `exceptions` section of `strings.json`. `translation_of` in
+`toshiba/errors.py` picks the key for an error of the client, whose own text stays in
+English for the log and never becomes a placeholder.
+
 | Condition | Result |
 |-----------|--------|
 | Network error, timeout, server error | Setup retry with a growing wait |

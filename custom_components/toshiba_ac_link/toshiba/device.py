@@ -25,6 +25,7 @@ from typing import Any, Generic, TypeVar
 
 from homeassistant.exceptions import HomeAssistantError
 
+from ..const import DOMAIN
 from .fcu_state import ToshibaAcFcuState
 from .features import ToshibaAcFeatures
 from .properties import (
@@ -207,11 +208,21 @@ class ToshibaAcDevice:  # pylint: disable=too-many-public-methods
         # features, and it must still be possible to turn it off
         if state.ac_status not in self.supported.ac_status:
             raise HomeAssistantError(
-                f"{self.name} cannot use the status {state.ac_status.name}"
+                translation_domain=DOMAIN,
+                translation_key="unsupported_status",
+                translation_placeholders={
+                    "unit": self.name,
+                    "status": state.ac_status.name,
+                },
             )
         if state.ac_mode not in self.supported.ac_mode:
             raise HomeAssistantError(
-                f"{self.name} cannot use the mode {state.ac_mode.name}"
+                translation_domain=DOMAIN,
+                translation_key="unsupported_mode",
+                translation_placeholders={
+                    "unit": self.name,
+                    "mode": state.ac_mode.name,
+                },
             )
         future = ToshibaAcFcuState.from_hex_state(self.fcu_state.encode())
         future.update(state.encode())

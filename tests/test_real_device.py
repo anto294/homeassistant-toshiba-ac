@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 import logging
+import time
 from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -16,6 +17,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 import pytest
 
 from custom_components.toshiba_ac_link.const import DOMAIN
+from custom_components.toshiba_ac_link.toshiba import guard as guard_module
 from custom_components.toshiba_ac_link.toshiba.api import ToshibaApi
 
 from custom_components.toshiba_ac_link.toshiba.device import ToshibaAcDevice
@@ -25,6 +27,7 @@ from custom_components.toshiba_ac_link.toshiba.properties import (
     ToshibaAcMode,
 )
 
+from .conftest import assert_translated
 from .fake_toshiba import (
     OTHER_UNIT_ID,
     RUNNING_STATE,
@@ -680,7 +683,7 @@ def test_an_action_for_a_mode_the_unit_lacks_fails_clearly(run_in_hass) -> None:
             fake.units = [FakeToshiba.unit(merit="0100")]
             entry = await add_real_entry(hass)
 
-            with pytest.raises(HomeAssistantError, match="cannot use the mode COOL"):
+            with pytest.raises(HomeAssistantError) as raised:
                 await hass.services.async_call(
                     "climate",
                     "set_temperature",
@@ -688,6 +691,10 @@ def test_an_action_for_a_mode_the_unit_lacks_fails_clearly(run_in_hass) -> None:
                     blocking=True,
                 )
 
+            assert_translated(
+                raised.value, "unsupported_mode", unit="Living room", mode="COOL"
+            )
+            assert str(raised.value) == "Living room does not support the mode COOL"
             assert fake.requests["command"] == 0
             await hass.config_entries.async_unload(entry.entry_id)
 
@@ -740,7 +747,7 @@ def test_an_answer_with_undelivered_units_still_fails(run_in_hass) -> None:
             fake.command_answer = {"FailedTargetIds": [UNIT_ID]}
             entry = await add_real_entry(hass)
 
-            with pytest.raises(HomeAssistantError, match="did not deliver"):
+            with pytest.raises(HomeAssistantError) as raised:
                 await hass.services.async_call(
                     "climate",
                     "set_temperature",
@@ -748,6 +755,7 @@ def test_an_answer_with_undelivered_units_still_fails(run_in_hass) -> None:
                     blocking=True,
                 )
 
+            assert_translated(raised.value, "command_not_delivered")
             assert fake.requests["command"] == 1
             await hass.config_entries.async_unload(entry.entry_id)
 
@@ -798,5 +806,101 @@ def test_choosing_off_as_the_hvac_mode_turns_a_running_unit_off(run_in_hass) -> 
             assert fake.commands[0]["payload"]["data"].startswith("31ff")
             assert hass.states.get(CLIMATE).state == "off"
             await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    ("status", "key", "placeholders"),
+    [
+        (401, "token_rejected", {}),
+        (500, "cannot_connect", {}),
+        (429, "blocked", {"minutes": "15"}),
+    ],
+)
+def test_a_failed_command_has_the_text_of_its_kind(
+    run_in_hass, status, key, placeholders
+) -> None:
+    """The text does not come from the client, so it can be translated, without details."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+            fake.statuses["command"] = status
+
+            with (
+                patch(
+                    "custom_components.toshiba_ac_link.toshiba.guard.jitter",
+                    return_value=0,
+                ),
+                pytest.raises(HomeAssistantError) as raised,
+            ):
+                await hass.services.async_call(
+                    "climate",
+                    "set_temperature",
+                    {"entity_id": CLIMATE, "temperature": 24},
+                    blocking=True,
+                )
+
+            assert_translated(raised.value, key, **placeholders)
+            assert fake.requests["command"] == 1
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+def test_a_command_during_a_block_says_how_long_it_lasts(run_in_hass) -> None:
+    """Nothing is sent, and the wait is in whole minutes, rounded up."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+            guard = hass.data[guard_module._DATA_GUARD]
+            guard._data["blocked_until"] = time.time() + 61
+
+            with pytest.raises(HomeAssistantError) as raised:
+                await hass.services.async_call(
+                    "climate",
+                    "set_temperature",
+                    {"entity_id": CLIMATE, "temperature": 24},
+                    blocking=True,
+                )
+
+            assert_translated(raised.value, "blocked", minutes="2")
+            assert fake.requests["command"] == 0
+            guard._data["blocked_until"] = 0
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    ("status", "state", "key"),
+    [
+        (401, ConfigEntryState.SETUP_ERROR, "token_rejected"),
+        (500, ConfigEntryState.SETUP_RETRY, "cannot_connect"),
+        (429, ConfigEntryState.SETUP_RETRY, "blocked"),
+    ],
+)
+def test_a_failed_setup_has_the_text_of_its_kind(
+    run_in_hass, status, state, key
+) -> None:
+    """The integration page shows this, in the language of the user."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_real_entry(hass)
+            await hass.config_entries.async_unload(entry.entry_id)
+            hass.data[guard_module._DATA_GUARD]._data.pop("cache")
+            fake.statuses["mapping"] = status
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+            assert entry.state is state
+            assert entry.error_reason_translation_domain == DOMAIN
+            assert entry.error_reason_translation_key == key
+            hass.data[guard_module._DATA_GUARD]._data["blocked_until"] = 0
 
     run_in_hass(scenario)
