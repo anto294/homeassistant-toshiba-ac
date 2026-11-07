@@ -20,7 +20,6 @@ from toshiba_ac_community.utils import pretty_enum_name
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
-    FAN_OFF,
     ClimateEntityFeature,
     HVACMode,
 )
@@ -192,15 +191,12 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
     async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
         _LOGGER.info("Toshiba Climate setting fan_mode: %s", fan_mode)
-        if fan_mode == FAN_OFF:
-            await self._device.set_ac_fan_mode(ToshibaAcStatus.OFF)
-        else:
-            if not self.is_on:
-                await self._device.set_ac_status(ToshibaAcStatus.ON)
-            fan_mode = fan_mode.title().replace("_", " ")
-            feature_list_id = get_feature_by_name(list(ToshibaAcFanMode), fan_mode)
-            if feature_list_id is not None:
-                await self._device.set_ac_fan_mode(feature_list_id)
+        if not self.is_on:
+            await self._device.set_ac_status(ToshibaAcStatus.ON)
+        fan_mode = fan_mode.title().replace("_", " ")
+        feature_list_id = get_feature_by_name(list(ToshibaAcFanMode), fan_mode)
+        if feature_list_id is not None:
+            await self._device.set_ac_fan_mode(feature_list_id)
 
     @property
     def fan_mode(self) -> str | None:
