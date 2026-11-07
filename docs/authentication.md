@@ -65,10 +65,11 @@ sequenceDiagram
 All requests carry a `Device-ID` header, from the device id in the entry, and an empty
 `User-Agent`. None is ever retried automatically. A failure waits for the next turn.
 
-The login, the list of units and the socket were confirmed on two real accounts. The
-command endpoint comes from public protocol documentation in
-[`christoh/FroniusMonitor`](https://github.com/christoh/FroniusMonitor), and has not yet
-been tried on a real unit.
+The login, the list of units and the socket were confirmed on two real accounts, and
+commands on one real unit of model 2. The command endpoint was found through
+[`christoh/FroniusMonitor`](https://github.com/christoh/FroniusMonitor). Its answer has
+`Status`, `FailedTargetIds` and `UnauthorizedTargetIds`, and the unit's echo carries the
+`messageId` of the command.
 
 ## What protects the account
 

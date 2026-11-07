@@ -58,9 +58,10 @@ always merged. Measured on two accounts:
   reconnects if the server closes.
 - Heartbeats are irregular: 6 in 20 minutes across 5 units. They say nothing about
   availability, so a ping checks the socket instead.
-- A change made in the app arrived about 90 to 100 seconds after the time in its own
-  message. So a command updates the state as soon as Toshiba accepts it, and a slow answer
-  from the unit must never lead to a repeat.
+- A command from this client was echoed within a second, twice. Changes made in the app
+  arrived 90 to 100 seconds after the time in their own messages, four times. The cause
+  of the difference is unknown. A command updates the state as soon as Toshiba accepts
+  it, and a slow answer from the unit must never lead to a repeat.
 - The app and another client can be connected to one account at the same time.
 - The timestamps of a unit's own messages are about an hour ahead, and off by tens of
   seconds per unit. Do not use them.

@@ -107,7 +107,7 @@ Outside the 8 °C mode, the target temperature goes from 17 to 30 °C. Except fo
 
 | Data | How | When |
 |---|---|---|
-| State of the unit | Pushed by the Toshiba cloud | When it changes. It can take a minute or two to arrive |
+| State of the unit | Pushed by the Toshiba cloud | When it changes. A change made in the app can take a minute or two |
 | State of all units, full refresh | One request | Every 30 minutes, and after a reconnection |
 | Energy consumption | One request | Every hour |
 
@@ -178,7 +178,7 @@ If your unit works with the [Toshiba Home AC Control](https://play.google.com/st
 ## Known limitations
 
 - **It needs the cloud.** No internet or a Toshiba outage means no control. There is no local mode.
-- **Changes can arrive late.** Toshiba's channel delivered changes made in the app a minute or two late in our measurements. A command from Home Assistant shows at once.
+- **Changes made in the app can arrive late.** They took a minute or two in our measurements. Commands from Home Assistant were confirmed in about a second.
 - **Toshiba limits requests.** See [Protecting your account](#protecting-your-account).
 - **New units need a reconnect.** A unit you add to the account appears after the `reconnect` action or a restart.
 - **Removed units stay.** Delete a unit that you removed from the account by hand.
