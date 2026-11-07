@@ -60,6 +60,7 @@ class FakeToshiba:
         self.refuse_sockets = False
         self.channel_tokens: set[str] = set()
         self.bad_channel_answers: list[Any] = []
+        self.raw_answers: dict[str, str] = {}
         self.base_url = ""
 
     @staticmethod
@@ -85,6 +86,10 @@ class FakeToshiba:
         self.requests[name] += 1
         if status := self.statuses.get(name):
             return web.Response(status=status, headers=self.headers)
+        if name in self.raw_answers:
+            return web.Response(
+                text=self.raw_answers[name], content_type="application/json"
+            )
         return None
 
     @staticmethod
