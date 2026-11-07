@@ -545,3 +545,131 @@ def test_no_echo_while_the_socket_is_down_says_nothing_about_the_unit(
                 await unload(hass, entry)
 
     run_in_hass(scenario)
+
+
+async def reconfigure(
+    hass: HomeAssistant, entry: ConfigEntry, flow_id=None, **form
+) -> dict:
+    """Send the reconfiguration form once, and return what it answers."""
+    if flow_id is None:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "reconfigure", "entry_id": entry.entry_id}
+        )
+        flow_id = result["flow_id"]
+    result = await hass.config_entries.flow.async_configure(flow_id, form)
+    await hass.async_block_till_done()
+    return result
+
+
+def test_reconfiguring_logs_in_once_and_a_restart_does_not(run_in_hass) -> None:
+    """Opening the form sends nothing, and the new token needs no other login."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            assert fake.requests["login"] == 1
+            fake.token = make_jwt(100 * 86400)
+
+            result = await hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": "reconfigure", "entry_id": entry.entry_id}
+            )
+            assert fake.requests["login"] == 1
+
+            result = await reconfigure(
+                hass,
+                entry,
+                result["flow_id"],
+                username="new@example.com",
+                password="secret",
+            )
+            assert result["reason"] == "reconfigure_successful"
+            assert fake.requests["login"] == 2
+            assert entry.state is ConfigEntryState.LOADED
+            assert entry.data["access_token"] == fake.token
+            assert "secret" not in str(entry.data)
+
+            for _ in range(3):
+                await restart(hass, entry)
+            assert fake.requests["login"] == 2
+            await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_failed_reconfiguring_stops_at_the_login_limit(run_in_hass) -> None:
+    """Its failures count with those of the other forms, and survive a restart."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            before = dict(entry.data)
+            logins = fake.requests["login"]
+            wrong = {"username": ACCOUNT["username"], "password": "wrong"}
+
+            flow_id = None
+            for _ in range(MAX_FAILED_LOGINS):
+                result = await reconfigure(hass, entry, flow_id, **wrong)
+                flow_id = result["flow_id"]
+                assert result["errors"] == {"base": "invalid_auth"}
+            assert fake.requests["login"] == logins + MAX_FAILED_LOGINS
+
+            await unload(hass, entry)
+            hass.data.pop(guard_module._DATA_GUARD)
+            result = await reconfigure(hass, entry, flow_id, **wrong)
+
+            assert result["errors"] == {"base": "too_many_attempts"}
+            assert fake.requests["login"] == logins + MAX_FAILED_LOGINS
+            assert dict(entry.data) == before
+
+    run_in_hass(scenario)
+
+
+def test_reconfiguring_with_another_account_makes_only_its_login(run_in_hass) -> None:
+    """The entry goes on with its own token, with no reload and no other request."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            before = dict(entry.data)
+            total = fake.total
+            fake.consumer_id = "consumer-2"
+            fake.token = make_jwt(100 * 86400)
+
+            result = await reconfigure(
+                hass, entry, username="other@example.com", password="secret"
+            )
+
+            assert result["reason"] == "wrong_account"
+            assert fake.total == total + 1
+            assert dict(entry.data) == before
+            assert entry.title == ACCOUNT["username"]
+            await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_reconfiguring_after_a_rejected_token_ends_the_request_for_a_password(
+    run_in_hass,
+) -> None:
+    """The entry works again, so nothing should keep asking for the password."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            guard = hass.data[guard_module._DATA_GUARD]
+            await guard.async_reject_token(entry.data["access_token"])
+            await hass.config_entries.async_unload(entry.entry_id)
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+            assert entry.state is ConfigEntryState.SETUP_ERROR
+            assert hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+
+            fake.token = make_jwt(100 * 86400)
+            result = await reconfigure(hass, entry, **ACCOUNT)
+
+            assert result["reason"] == "reconfigure_successful"
+            assert entry.state is ConfigEntryState.LOADED
+            assert not hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+            await unload(hass, entry)
+
+    run_in_hass(scenario)

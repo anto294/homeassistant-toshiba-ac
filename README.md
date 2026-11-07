@@ -83,6 +83,8 @@ Each account can be added once. There are no other options.
 
 Your password is used for one login and is not stored. Toshiba's token lasts about two years. When it stops working, Home Assistant asks for the password under **Settings → Devices & services**.
 
+To correct the username or password of an account, for example after you change them in the Toshiba app, select **Reconfigure** in the menu of the entry. That form logs in once for each time you send it, and it refuses a different account: to use another one, add it as a new entry.
+
 The Toshiba app can stay in use at the same time. Enter the password with care, because the form allows 3 failed attempts per hour.
 
 ## Entities

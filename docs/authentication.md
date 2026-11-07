@@ -20,6 +20,11 @@ trouble.
 **The password is not stored.** It has no use after the login, and what is not stored
 cannot be retried. When a token stops working, Home Assistant asks for the password.
 
+Three forms log in, once for each time the user sends them: setup, reauthentication, and
+reconfiguration. The last two keep the stored `device_id`. Reconfiguration can change the
+username, so it compares the `consumerId` of the answer with the entry, and drops the
+answer and its token if they differ.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -98,6 +103,7 @@ Keep it passing, and extend it with any new request.
 | Login rejected, on the form | "Invalid username or password" |
 | Limit reached or blocked, on the form | "Too many attempts" |
 | Anything else, on the form | "Failed to connect" |
+| Another account, on the reconfiguration form | "This is a different Toshiba account", and the entry stays as it was |
 | Token rejected or expired | Reauthentication |
 | Blocked, or over budget | Retry after the remaining wait |
 | Network, timeout, other HTTP errors | Retry with the normal growing wait |

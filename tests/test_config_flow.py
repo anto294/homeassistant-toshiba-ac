@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 import pytest
 
 from custom_components.toshiba_ac_link.const import DOMAIN
+from custom_components.toshiba_ac_link.toshiba.api import LoginResult
 from custom_components.toshiba_ac_link.toshiba.errors import (
     ToshibaAuthError,
     ToshibaBlockedError,
@@ -115,5 +116,133 @@ def test_reauthentication_keeps_the_device_id(run_in_hass) -> None:
             "new-secret",
             device_id,
         )
+
+    run_in_hass(scenario)
+
+
+RECONFIGURED = {"username": "new@example.com", "password": "new-secret"}
+
+
+async def start_reconfigure(hass: HomeAssistant, entry) -> dict:
+    """Open the form from the menu of the entry."""
+    return await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "reconfigure", "entry_id": entry.entry_id}
+    )
+
+
+def suggested_username(result: dict) -> str:
+    """Return the username that the form shows."""
+    field = next(key for key in result["data_schema"].schema if key == "username")
+    return field.description["suggested_value"]
+
+
+def test_reconfiguring_updates_the_entry_with_one_login(run_in_hass) -> None:
+    """A corrected username reaches the data and the title, and stays the same device."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        entry = await async_add_entry(hass, make_manager())
+        device_id = entry.data["device_id"]
+        answer = LoginResult("new-token", "Bearer", "consumer-1")
+
+        with (
+            patch(LOGIN_CALL, AsyncMock(return_value=answer)) as login,
+            patch(
+                "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",
+                return_value=make_manager(),
+            ) as manager,
+        ):
+            result = await start_reconfigure(hass, entry)
+            assert result["type"] == "form"
+            assert result["step_id"] == "reconfigure"
+            assert suggested_username(result) == ACCOUNT["username"]
+            login.assert_not_awaited()
+
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], dict(RECONFIGURED)
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == "abort"
+        assert result["reason"] == "reconfigure_successful"
+        login.assert_awaited_once()
+        assert login.await_args.args[2:] == (
+            "new@example.com",
+            "new-secret",
+            device_id,
+        )
+        assert entry.title == "new@example.com"
+        assert entry.unique_id == "consumer-1"
+        assert entry.data == {
+            "username": "new@example.com",
+            "device_id": device_id,
+            "access_token": "new-token",
+            "access_token_type": "Bearer",
+            "consumer_id": "consumer-1",
+        }
+        manager.assert_called_once()
+
+    run_in_hass(scenario)
+
+
+def test_reconfiguring_refuses_another_account_and_keeps_nothing(run_in_hass) -> None:
+    """Its token must not replace the one of this entry, or its units would mix."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        entry = await async_add_entry(hass, make_manager())
+        before = dict(entry.data)
+        answer = LoginResult("other-token", "Bearer", "consumer-2")
+
+        with (
+            patch(LOGIN_CALL, AsyncMock(return_value=answer)),
+            patch(
+                "custom_components.toshiba_ac_link.ToshibaAcDeviceManager"
+            ) as manager,
+        ):
+            result = await start_reconfigure(hass, entry)
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], dict(RECONFIGURED)
+            )
+            await hass.async_block_till_done()
+
+        assert result["type"] == "abort"
+        assert result["reason"] == "wrong_account"
+        assert dict(entry.data) == before
+        assert entry.title == ACCOUNT["username"]
+        assert entry.unique_id == "consumer-1"
+        manager.assert_not_called()
+
+    run_in_hass(scenario)
+
+
+@pytest.mark.parametrize(
+    ("error", "code"),
+    [
+        (ToshibaAuthError("wrong password"), "invalid_auth"),
+        (ToshibaBlockedError("slow down", 100), "too_many_attempts"),
+        (ToshibaConnectionError("HTTP 500"), "cannot_connect"),
+        (RuntimeError("surprise"), "unknown"),
+    ],
+)
+def test_reconfiguring_shows_errors_and_changes_nothing(
+    run_in_hass, error, code
+) -> None:
+    """The form stays open with what the user typed, and the entry stays as it was."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        entry = await async_add_entry(hass, make_manager())
+        before = dict(entry.data)
+
+        with patch(LOGIN_CALL, AsyncMock(side_effect=error)):
+            result = await start_reconfigure(hass, entry)
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], dict(RECONFIGURED)
+            )
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "reconfigure"
+        assert result["errors"] == {"base": code}
+        assert suggested_username(result) == "new@example.com"
+        assert dict(entry.data) == before
+        assert entry.title == ACCOUNT["username"]
 
     run_in_hass(scenario)

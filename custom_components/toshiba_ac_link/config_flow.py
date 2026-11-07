@@ -51,7 +51,7 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
 
         The password is not stored. When the token stops working, in about two
         years, Home Assistant asks for it again, so nothing can repeat a login.
-        Reauthentication passes device_id, to stay the same device for Toshiba.
+        The forms of an existing entry pass device_id, to stay the same device for Toshiba.
         """
         device_id = device_id or secrets.token_hex(8)
         try:
@@ -127,5 +127,40 @@ class ToshibaLinkConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm",
             data_schema=STEP_REAUTH_DATA_SCHEMA,
             description_placeholders={"username": entry.data["username"]},
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Correct the username and password of the same account, from the entry's menu.
+
+        Only a login can tell which account this is. The answer of another account
+        is dropped here, with its token, so nothing of the entry changes.
+        """
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        username = entry.data["username"]
+
+        if user_input is not None:
+            username = user_input["username"]
+            data, errors = await self._async_try_input(
+                username, user_input["password"], entry.data.get("device_id")
+            )
+            if data is not None:
+                # The login is already spent, so another open form must not waste it
+                await self.async_set_unique_id(
+                    data["consumer_id"], raise_on_progress=False
+                )
+                self._abort_if_unique_id_mismatch(reason="wrong_account")
+                return self.async_update_reload_and_abort(
+                    entry, title=username, data=data
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA, {"username": username}
+            ),
             errors=errors,
         )

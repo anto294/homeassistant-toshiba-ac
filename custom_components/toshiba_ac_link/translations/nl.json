@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Dit Toshiba-account is al geconfigureerd",
-      "reauth_successful": "Herauthenticatie geslaagd"
+      "reauth_successful": "Herauthenticatie geslaagd",
+      "reconfigure_successful": "Herconfiguratie is gelukt",
+      "wrong_account": "Dit is een ander Toshiba-account. Voeg het als nieuw item toe om het te gebruiken."
     },
     "error": {
       "cannot_connect": "Kan niet verbinden",
@@ -21,6 +23,13 @@
       "reauth_confirm": {
         "description": "De inloggegevens voor {username} zijn niet langer geldig. Voer het huidige wachtwoord in om opnieuw verbinding te maken.",
         "data": {
+          "password": "Wachtwoord"
+        }
+      },
+      "reconfigure": {
+        "description": "Corrigeer de gebruikersnaam of het wachtwoord van dit Toshiba-account. Het wachtwoord wordt voor één aanmelding gebruikt en niet opgeslagen. Voeg een ander account als nieuw item toe om het te gebruiken.",
+        "data": {
+          "username": "Gebruikersnaam",
           "password": "Wachtwoord"
         }
       }

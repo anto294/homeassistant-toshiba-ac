@@ -54,6 +54,7 @@ class FakeToshiba:
         self.command_answer: Any = {"Status": "Success"}
         self.passwords: list[str] = []
         self.good_password = "secret"
+        self.consumer_id = "consumer-1"
         self.token = make_jwt()
         self.units: list[dict[str, Any]] = [self.unit()]
         self.sockets: list[web.WebSocketResponse] = []
@@ -118,7 +119,7 @@ class FakeToshiba:
             {
                 "access_token": self.token,
                 "token_type": "Bearer",
-                "consumerId": "consumer-1",
+                "consumerId": self.consumer_id,
             }
         )
 

@@ -7,6 +7,12 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Added
+
+- A **Reconfigure** option in the menu of an entry corrects the username and password of
+  the same account, without removing it. It logs in once for each time the form is sent,
+  and refuses a different account without changing anything.
+
 ### Changed
 
 - Errors that Home Assistant shows, from actions and on the integration page, are now in

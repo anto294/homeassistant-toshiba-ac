@@ -2,7 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "Dieses Toshiba-Konto ist bereits konfiguriert",
-      "reauth_successful": "Erneute Authentifizierung war erfolgreich"
+      "reauth_successful": "Erneute Authentifizierung war erfolgreich",
+      "reconfigure_successful": "Die Neukonfiguration war erfolgreich",
+      "wrong_account": "Dies ist ein anderes Toshiba-Konto. Um es zu verwenden, füge es als neuen Eintrag hinzu."
     },
     "error": {
       "cannot_connect": "Fehler beim Verbinden",
@@ -21,6 +23,13 @@
       "reauth_confirm": {
         "description": "Die Zugangsdaten für {username} sind nicht mehr gültig. Gib das aktuelle Passwort ein, um die Verbindung wiederherzustellen.",
         "data": {
+          "password": "Passwort"
+        }
+      },
+      "reconfigure": {
+        "description": "Korrigiere den Benutzernamen oder das Passwort dieses Toshiba-Kontos. Das Passwort wird für eine Anmeldung verwendet und nicht gespeichert. Um ein anderes Konto zu verwenden, füge es als neuen Eintrag hinzu.",
+        "data": {
+          "username": "Benutzername",
           "password": "Passwort"
         }
       }
