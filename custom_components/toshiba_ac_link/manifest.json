@@ -1,19 +1,24 @@
 {
-  "domain": "toshiba_ac_link",
-  "name": "Toshiba Link",
-  "codeowners": ["@h4de5"],
-  "config_flow": true,
-  "dependencies": [],
-  "documentation": "https://github.com/h4de5/home-assistant-toshiba_ac",
-  "homekit": {},
-  "iot_class": "cloud_push",
-  "issue_tracker": "https://github.com/h4de5/home-assistant-toshiba_ac/issues",
-  "requirements": [
-    "azure-iot-device==2.15.0rc1",
-    "toshiba-ac==0.3.13",
-    "janus==1.0.0"
-  ],
-  "ssdp": [],
-  "version": "2026.10.0",
-  "zeroconf": []
+    "domain": "toshiba_ac_link",
+    "name": "Toshiba Link",
+    "categories": [
+        "climate.heat_pumps_air_conditioning"
+    ],
+    "codeowners": [
+        "@anto294"
+    ],
+    "config_flow": true,
+    "connectivity": [
+        "cloud"
+    ],
+    "dependencies": [],
+    "documentation": "https://github.com/anto294/homeassistant-toshiba-ac",
+    "iot_class": "cloud_push",
+    "issue_tracker": "https://github.com/anto294/homeassistant-toshiba-ac/issues",
+    "requirements": [
+        "azure-iot-device==2.15.0rc1",
+        "toshiba-ac==0.3.13",
+        "janus==1.0.0"
+    ],
+    "version": "0.0.0"
 }

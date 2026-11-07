@@ -1,6 +1,6 @@
 {
-  "name": "Toshiba AC",
-  "content_in_root": false,
-  "render_readme": true,
-  "homeassistant": "2025.3.0"
+    "name": "Toshiba Link",
+    "homeassistant": "2026.11.0",
+    "zip_release": true,
+    "filename": "toshiba_ac_link.zip"
 }
