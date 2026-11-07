@@ -776,3 +776,27 @@ def test_an_energy_reading_after_the_start_updates_the_sensor(run_in_hass) -> No
             await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_choosing_off_as_the_hvac_mode_turns_a_running_unit_off(run_in_hass) -> None:
+    """Off is not a mode of the unit: it must send the status, in one command."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+            assert hass.states.get(CLIMATE).state == "cool"
+
+            await hass.services.async_call(
+                "climate",
+                "set_hvac_mode",
+                {"entity_id": CLIMATE, "hvac_mode": "off"},
+                blocking=True,
+            )
+
+            assert fake.requests["command"] == 1
+            assert fake.commands[0]["payload"]["data"].startswith("31ff")
+            assert hass.states.get(CLIMATE).state == "off"
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)
