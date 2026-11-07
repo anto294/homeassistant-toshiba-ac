@@ -29,7 +29,9 @@ rules:
   test-before-setup: done
   unique-config-entry: done
   # Silver
-  action-exceptions: done
+  action-exceptions:
+    status: done
+    comment: A refused or failed command, a block, a rejected token, and a mode or status the unit lacks raise HomeAssistantError, and reconnect raises it if an entry does not load. Tests cover each through real actions.
   config-entry-unloading: done
   docs-configuration-parameters:
     status: exempt
