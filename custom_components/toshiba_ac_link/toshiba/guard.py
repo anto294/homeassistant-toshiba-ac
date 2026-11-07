@@ -37,6 +37,8 @@ FAILED_LOGIN_WINDOW_S = 3600
 
 MAX_REJECTED_TOKENS = 20
 
+REMEMBER_DELAY_S = 10
+
 _RANDOM = secrets.SystemRandom()
 
 _DATA_GUARD: HassKey[ToshibaGuard] = HassKey("toshiba_ac_link_guard")
@@ -186,6 +188,25 @@ class ToshibaGuard:
     async def async_cache(self, kind: str, account: str, value: dict[str, Any]) -> None:
         """Save an answer of this account."""
         self._data.setdefault("cache", {}).setdefault(kind, {})[account] = value
+        await self._async_save()
+
+    def remember_unit_state(self, account: str, unit_id: str, state: str) -> None:
+        """Correct a unit in the saved list, keeping the age of that list.
+
+        This is not a limit, so a delayed save is enough, which spares the disk when a
+        unit is busy. The store also writes it when Home Assistant stops.
+        """
+        cached = self.cached("units", account)
+        if not cached:
+            return
+        for group in cached["groups"]:
+            for unit in group.get("ACList", []) if isinstance(group, dict) else []:
+                if isinstance(unit, dict) and unit.get("DeviceUniqueId") == unit_id:
+                    unit["ACStateData"] = state
+        self._store.async_delay_save(lambda: self._data, REMEMBER_DELAY_S)
+
+    async def async_save_now(self) -> None:
+        """Write what a delayed save still holds."""
         await self._async_save()
 
     def diagnostics(self) -> dict[str, Any]:

@@ -40,6 +40,8 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   closing another connection.
 - On units that report independent vanes, a fixed vertical position or a horizontal
   setting is no longer dropped from the command when the unit's data does not declare it.
+- A restart now shows the commands and pushes from before it right away, because the saved
+  list of units is corrected as they happen.
 
 ### Security
 

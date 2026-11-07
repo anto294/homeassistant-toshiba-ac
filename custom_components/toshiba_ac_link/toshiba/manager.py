@@ -112,6 +112,7 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+        await self._guard.async_save_now()
 
     # Units
 
@@ -134,8 +135,8 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
         cached = self._guard.cached("units", self._consumer_id)
         if cached and 0 <= time.time() - cached["at"] < UNITS_CACHE_S:
             groups = cached["groups"]
-            # The saved list misses commands and pushes since it was saved, so ask
-            # again later. This waits REFRESH_MIN_S, so a restart loop cancels it.
+            # The socket misses what changes while it is closed, so ask again later.
+            # This waits REFRESH_MIN_S, so a restart loop cancels it.
             self._refresh_now.set()
         else:
             groups = await self._api.async_get_groups()
@@ -156,6 +157,9 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
                     self._async_send_command,
                     lambda: self._realtime.connected,
                 )
+                self._devices[unit.ac_unique_id].on_state_changed_callback.add(
+                    self._remember_state
+                )
             except _BAD_DATA_ERRORS as ex:
                 skipped += 1
                 _LOGGER.debug("Cannot read a unit: %s", type(ex).__name__)
@@ -167,6 +171,12 @@ class ToshibaAcDeviceManager:  # pylint: disable=too-many-instance-attributes
             # Loading with nothing would stay empty until the next restart
             if not self._devices:
                 raise ToshibaConnectionError("No unit can be read")
+
+    def _remember_state(self, device: ToshibaAcDevice) -> None:
+        """Keep the saved list correct, for a restart that reuses it."""
+        self._guard.remember_unit_state(
+            self._consumer_id, device.ac_unique_id, device.fcu_state.encode()
+        )
 
     # Realtime channel
 

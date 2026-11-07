@@ -23,8 +23,9 @@ supports. A device without energy monitoring gets no energy sensor.
 | Azure Web PubSub, over one WebSocket | What the units publish | Push |
 
 The list of units gives the full state at the start, and every 30 minutes as a safety
-net. A start that reused a saved list asks again after 5 minutes, because that list misses
-what happened since it was saved. The socket brings changes in between.
+net. Commands and pushes also correct the saved list, so a restart shows them at once. A start
+that reused a saved list asks again after 5 minutes, because the socket misses what
+changes while it is closed. The socket brings changes in between.
 
 ```mermaid
 flowchart LR

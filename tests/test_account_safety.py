@@ -112,6 +112,54 @@ def test_a_start_from_the_saved_list_catches_up_later(run_in_hass) -> None:
     run_in_hass(scenario)
 
 
+def test_a_restart_remembers_commands_and_pushes(run_in_hass) -> None:
+    """The saved list is corrected on disk, with no request at all."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            await hass.services.async_call(
+                "climate",
+                "set_hvac_mode",
+                {"entity_id": "climate.living_room", "hvac_mode": "heat"},
+                blocking=True,
+            )
+            sent = fake.total - fake.requests["channel"]
+
+            await restart(hass, entry)
+
+            assert hass.states.get("climate.living_room").state == "heat"
+            assert fake.total - fake.requests["channel"] == sent
+            await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
+def test_remembering_a_state_does_not_make_the_list_younger(run_in_hass) -> None:
+    """Otherwise a busy unit would stop the list from ever being asked for again."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            entry = await add_entry(hass)
+            guard = hass.data[guard_module._DATA_GUARD]
+            saved = guard.cached("units", "consumer-1")["at"]
+
+            await fake.publish(
+                "CMD_FCU_FROM_AC",
+                {"data": "30ffffffffffffffffffffffffffffffffffffffffff"},
+            )
+            await wait_until(
+                lambda: hass.states.get("climate.living_room").state != "off"
+            )
+
+            cached = guard.cached("units", "consumer-1")
+            assert cached["at"] == saved
+            assert cached["groups"][0]["ACList"][0]["ACStateData"].startswith("30")
+            await unload(hass, entry)
+
+    run_in_hass(scenario)
+
+
 def test_restarts_cannot_exceed_the_hourly_budget(run_in_hass) -> None:
     """Even when the list of units is out of date, the disk stops the requests."""
 
