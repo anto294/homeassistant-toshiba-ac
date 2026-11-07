@@ -1,0 +1,9 @@
+properties.py, features.py and fcu_state.py come from toshiba-ac-community 0.8.0
+(https://github.com/vmvelev/Toshiba-AC-control), a fork of
+https://github.com/KaSroka/Toshiba-AC-control, Copyright 2021 Kamil Sroka, under
+the Apache License 2.0 in the LICENSE file next to this one.
+
+Changes: their imports point at this package, pretty_enum_name moved to
+properties.py from the library's utils module, and the files are formatted with
+black. device.py is based on the library's device/__init__.py, with its transport
+replaced.
