@@ -1,4 +1,5 @@
 """Tests for Toshiba AC connection timeout (Issue #283)."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
@@ -59,6 +60,7 @@ class TestConnectionTimeout:
     @pytest.mark.asyncio
     async def test_connect_timeout_raises_not_ready(self):
         """Timeout after 30s raises ConfigEntryNotReady."""
+
         async def slow_connect():
             await asyncio.sleep(60)  # Simulate hanging connection
             return None
@@ -78,7 +80,9 @@ class TestConnectionTimeout:
     async def test_connect_auth_error_raises_auth_failed(self):
         """401/403 errors raise ConfigEntryAuthFailed."""
         mock_device_manager = MagicMock()
-        mock_device_manager.connect = AsyncMock(side_effect=Exception("401 Unauthorized"))
+        mock_device_manager.connect = AsyncMock(
+            side_effect=Exception("401 Unauthorized")
+        )
 
         with patch(
             "custom_components.toshiba_ac_link.ToshibaAcDeviceManager",

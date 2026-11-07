@@ -1,4 +1,5 @@
 """Config flow for the Toshiba Link integration."""
+
 from __future__ import annotations
 
 import asyncio

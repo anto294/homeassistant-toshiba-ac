@@ -4,6 +4,7 @@ Two Home Assistant instances on one Toshiba account make IoT Hub refuse the
 connection. The library reports that as "Credentials invalid, could not
 connect", which reads like a wrong password. These tests pin the translation.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from azure.iot.device.common.transport_exceptions import (

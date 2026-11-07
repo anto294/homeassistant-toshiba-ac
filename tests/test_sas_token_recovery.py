@@ -1,4 +1,5 @@
 """Tests for SAS token recovery (integration must heal from a lost token)."""
+
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -16,10 +17,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 def make_sas_token(expiry: int) -> str:
     """Build a token with the same field layout as Toshiba's."""
-    return (
-        "SharedAccessSignature sr=hub%2Fdevices%2Funit&sig=abc123&"
-        f"se={expiry}"
-    )
+    return "SharedAccessSignature sr=hub%2Fdevices%2Funit&sig=abc123&" f"se={expiry}"
 
 
 def create_mock_entry(sas_token):
@@ -77,7 +75,9 @@ class TestSasTokenExpiry:
     def test_expired_token_not_handed_to_device_manager(self):
         entry = create_mock_entry(make_sas_token(int(time.time()) - 10))
 
-        with patch("custom_components.toshiba_ac_link.ToshibaAcDeviceManager") as manager:
+        with patch(
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager"
+        ) as manager:
             _create_device_manager(entry)
 
         assert manager.call_args.args[3] is None
@@ -86,7 +86,9 @@ class TestSasTokenExpiry:
         sas_token = make_sas_token(int(time.time()) + 3600)
         entry = create_mock_entry(sas_token)
 
-        with patch("custom_components.toshiba_ac_link.ToshibaAcDeviceManager") as manager:
+        with patch(
+            "custom_components.toshiba_ac_link.ToshibaAcDeviceManager"
+        ) as manager:
             _create_device_manager(entry)
 
         assert manager.call_args.args[3] == sas_token
@@ -117,9 +119,12 @@ class TestSasTokenRecovery:
         assert manager.connect.call_count == 2
         assert manager.sas_token is None
         self.hass.config_entries.async_update_entry.assert_called_once()
-        assert self.hass.config_entries.async_update_entry.call_args.kwargs["data"][
-            "sas_token"
-        ] == "new_token"
+        assert (
+            self.hass.config_entries.async_update_entry.call_args.kwargs["data"][
+                "sas_token"
+            ]
+            == "new_token"
+        )
 
     @pytest.mark.asyncio
     async def test_unauthorized_triggers_registration(self):

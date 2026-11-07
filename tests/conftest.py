@@ -5,6 +5,7 @@ not installed in the test venv. All test modules therefore need the same stubs,
 and they have to exist before the first import of the integration. pytest loads
 this file first, so the stubs are installed here exactly once.
 """
+
 import sys
 from unittest.mock import MagicMock
 
