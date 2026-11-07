@@ -1,0 +1,87 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Questo account Toshiba è già configurato",
+            "reauth_successful": "Nuova autenticazione riuscita"
+        },
+        "error": {
+            "cannot_connect": "Connessione non riuscita",
+            "invalid_auth": "Nome utente o password non validi",
+            "unknown": "Errore imprevisto"
+        },
+        "step": {
+            "user": {
+                "description": "Inserisci l'account che usi nell'app Toshiba.",
+                "data": {
+                    "username": "Nome utente",
+                    "password": "Password"
+                }
+            },
+            "reauth_confirm": {
+                "description": "Le credenziali di {username} non sono più valide. Inserisci la password attuale per riconnetterti.",
+                "data": {
+                    "password": "Password"
+                }
+            }
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "self_cleaning": {
+                "name": "Autopulizia"
+            }
+        },
+        "select": {
+            "cdu_silent": {
+                "name": "Modalità silenziosa unità esterna",
+                "state": {
+                    "off": "Spenta",
+                    "cdu_silent_1": "Silenziosa 1",
+                    "cdu_silent_2": "Silenziosa 2"
+                }
+            },
+            "fireplace": {
+                "name": "Modalità camino",
+                "state": {
+                    "off": "Spenta",
+                    "fireplace_1": "Camino 1",
+                    "fireplace_2": "Camino 2"
+                }
+            }
+        },
+        "sensor": {
+            "energy_consumption": {
+                "name": "Consumo energetico"
+            },
+            "indoor_temperature": {
+                "name": "Temperatura interna"
+            },
+            "outdoor_temperature": {
+                "name": "Temperatura esterna"
+            }
+        },
+        "switch": {
+            "8_degc_mode": {
+                "name": "Modalità 8 °C"
+            },
+            "air_purifier": {
+                "name": "Purificatore d'aria"
+            },
+            "eco_mode": {
+                "name": "Modalità ECO"
+            },
+            "high_power_mode": {
+                "name": "Modalità alta potenza"
+            },
+            "wireless_led": {
+                "name": "LED wireless"
+            }
+        }
+    },
+    "services": {
+        "reconnect": {
+            "name": "Riconnetti",
+            "description": "Crea una nuova connessione al cloud Toshiba per tutte le voci. Usala dopo aver chiuso un'altra connessione allo stesso account."
+        }
+    }
+}

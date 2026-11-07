@@ -1,60 +1,87 @@
 {
-  "config": {
-    "abort": {
-      "already_configured": "Das Gerät ist bereits konfiguriert."
-    },
-    "error": {
-      "cannot_connect": "Fehler beim Verbinden",
-      "invalid_auth": "Benutzerdaten konnten nicht verifiziert werden",
-      "unknown": "Unerwarteter Fehler"
-    },
-    "step": {
-      "user": {
-        "data": {
-          "host": "Host",
-          "password": "Passwort",
-          "username": "Benutzername"
+    "config": {
+        "abort": {
+            "already_configured": "Dieses Toshiba-Konto ist bereits konfiguriert",
+            "reauth_successful": "Erneute Authentifizierung war erfolgreich"
+        },
+        "error": {
+            "cannot_connect": "Fehler beim Verbinden",
+            "invalid_auth": "Benutzername oder Passwort ungültig",
+            "unknown": "Unerwarteter Fehler"
+        },
+        "step": {
+            "user": {
+                "description": "Gib das Konto ein, das du in der Toshiba-App verwendest.",
+                "data": {
+                    "username": "Benutzername",
+                    "password": "Passwort"
+                }
+            },
+            "reauth_confirm": {
+                "description": "Die Zugangsdaten für {username} sind nicht mehr gültig. Gib das aktuelle Passwort ein, um die Verbindung wiederherzustellen.",
+                "data": {
+                    "password": "Passwort"
+                }
+            }
         }
-      }
+    },
+    "entity": {
+        "switch": {
+            "8_degc_mode": {
+                "name": "8 °C Heizbetrieb"
+            },
+            "air_purifier": {
+                "name": "Luftreiniger"
+            },
+            "eco_mode": {
+                "name": "ECO Modus"
+            },
+            "high_power_mode": {
+                "name": "Hochleistungs Modus"
+            },
+            "wireless_led": {
+                "name": "Wireless-LED"
+            }
+        },
+        "sensor": {
+            "outdoor_temperature": {
+                "name": "Außentemperatur"
+            },
+            "energy_consumption": {
+                "name": "Energieverbrauch"
+            },
+            "indoor_temperature": {
+                "name": "Innentemperatur"
+            }
+        },
+        "select": {
+            "cdu_silent": {
+                "name": "Geräuscharmer Betrieb (Außengerät)",
+                "state": {
+                    "off": "Aus",
+                    "cdu_silent_1": "Geräuscharm 1",
+                    "cdu_silent_2": "Geräuscharm 2"
+                }
+            },
+            "fireplace": {
+                "name": "Kaminbetrieb",
+                "state": {
+                    "off": "Aus",
+                    "fireplace_1": "Kamin 1",
+                    "fireplace_2": "Kamin 2"
+                }
+            }
+        },
+        "binary_sensor": {
+            "self_cleaning": {
+                "name": "Selbstreinigung"
+            }
+        }
+    },
+    "services": {
+        "reconnect": {
+            "name": "Neu verbinden",
+            "description": "Stellt für alle Einträge eine neue Verbindung zur Toshiba-Cloud her. Verwende dies, nachdem du eine andere Verbindung zum selben Konto geschlossen hast."
+        }
     }
-  },
-  "entity": {
-    "switch": {
-      "8_degc_mode": {
-        "name": "8 °C Heizbetrieb"
-      },
-      "air_purifier": {
-        "name": "Luftreiniger"
-      },
-      "eco_mode": {
-        "name": "ECO Modus"
-      },
-      "high_power_mode": {
-        "name": "Hochleistungs Modus"
-      }
-    },
-    "sensor": {
-      "outdoor_temperature": {
-        "name": "Außentemperatur"
-      }
-    },
-    "select": {
-      "cdu_silent": {
-        "name": "Geräuscharmer Betrieb (Außengerät)",
-        "state": {
-          "off": "Aus",
-          "cdu_silent_1": "Geräuscharm 1",
-          "cdu_silent_2": "Geräuscharm 2"
-        }
-      },
-      "fireplace": {
-        "name": "Kaminbetrieb",
-        "state": {
-          "off": "Aus",
-          "fireplace_1": "Kamin 1",
-          "fireplace_2": "Kamin 2"
-        }
-      }
-    }
-  }
 }
