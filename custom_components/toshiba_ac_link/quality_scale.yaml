@@ -63,20 +63,20 @@ rules:
   docs-use-cases: done
   dynamic-devices:
     status: done
-    comment: A unit added to the account appears after the next list of units, within about 30 minutes, with a reload.
+    comment: A unit added to the account appears by itself after the next list of units, within about 30 minutes, and the user does nothing. The integration reloads its own entry for this, so the entities of the account are unavailable for a moment. The example of the rule adds entities without a reload, and the rule does not require that mechanism.
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default:
-    status: todo
-    comment: Every entity starts enabled.
+    status: done
+    comment: The indoor temperature sensor starts disabled on new units, because the climate entity shows the same value. A test shows that a sensor already in the registry stays enabled.
   entity-translations: done
   exception-translations:
-    status: todo
-    comment: Connection errors are shown in English.
+    status: done
+    comment: Every error raised to a user has a translation key in four languages, and tests check the keys through real actions and a real setup. The pylint checks of the rule only run in core.
   icon-translations: done
   reconfiguration-flow:
-    status: todo
-    comment: The account of an entry cannot be changed. Reauthentication logs in to it again.
+    status: done
+    comment: The form corrects the username and password of the same account, and refuses another one. The rule exempts integrations whose only settings are credentials that reauthentication handles, but reauthentication here cannot change the username.
   repair-issues:
     status: exempt
     comment: Nothing needs a repair. A rejected token uses reauthentication, and a block ends by itself.

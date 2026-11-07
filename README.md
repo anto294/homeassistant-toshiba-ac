@@ -120,7 +120,7 @@ Your units talk only to the Toshiba cloud. Home Assistant talks to it in two way
 | State of all units, full refresh | One request | Every 30 minutes, and 5 minutes after a reconnection or a restart that reused a recent list |
 | Energy consumption | One request, only if a unit reports it | Every hour |
 | A command | One request, never repeated automatically | When you send it. The entity shows the new value as soon as Toshiba accepts it |
-| Login | One request | Only when you send the setup or reauthentication form |
+| Login | One request | Only when you send the setup, reauthentication or reconfiguration form |
 
 If the WebSocket drops, the entities of that account become unavailable, and the integration reconnects by itself, waiting 5 seconds or more, and up to 15 minutes if it keeps failing.
 
@@ -312,10 +312,10 @@ Home Assistant grades the integrations in its core with the [Integration Quality
 |---|---:|---:|---:|---:|
 | Bronze | 20 | 17 | 3 | 0 |
 | Silver | 10 | 9 | 1 | 0 |
-| Gold | 21 | 15 | 3 | 3 |
+| Gold | 21 | 18 | 3 | 0 |
 | Platinum | 3 | 3 | 0 | 0 |
 
-A tier needs every rule of that tier and the ones below it, so this project meets Bronze and Silver, and does not claim the others yet. The tests cover 99 percent of the code, and CI measures this on each run.
+By this assessment, every rule of the four tiers is met or does not apply. That is not an official tier, which only an integration in core can get. The tests cover 99 percent of the code, and CI measures this on each run.
 
 ## Credits and license
 
