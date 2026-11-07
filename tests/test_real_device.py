@@ -312,3 +312,27 @@ def test_the_energy_sensor_follows_the_connection(run_in_hass) -> None:
                 await hass.config_entries.async_unload(entry.entry_id)
 
     run_in_hass(scenario)
+
+
+def test_set_temperature_applies_the_hvac_mode_too(run_in_hass) -> None:
+    """The action accepts a mode, which used to be dropped without a word."""
+
+    async def scenario(hass: HomeAssistant) -> None:
+        async with run_fake_toshiba() as fake:
+            fake.units[0]["ACStateData"] = RUNNING_STATE
+            entry = await add_real_entry(hass)
+
+            await hass.services.async_call(
+                "climate",
+                "set_temperature",
+                {"entity_id": CLIMATE, "temperature": 24, "hvac_mode": "heat"},
+                blocking=True,
+            )
+
+            frames = [c["payload"]["data"] for c in fake.commands]
+            assert [frame[:6] for frame in frames] == ["ff43ff", "ffff18"]
+            state = hass.states.get(CLIMATE)
+            assert (state.state, state.attributes["temperature"]) == ("heat", 24)
+            await hass.config_entries.async_unload(entry.entry_id)
+
+    run_in_hass(scenario)

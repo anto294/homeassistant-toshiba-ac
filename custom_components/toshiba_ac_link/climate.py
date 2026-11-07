@@ -24,6 +24,7 @@ from .toshiba.properties import pretty_enum_name
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
+    ATTR_HVAC_MODE,
     ClimateEntityFeature,
     HVACMode,
 )
@@ -148,7 +149,10 @@ class ToshibaClimate(ToshibaAcStateEntity, ClimateEntity):
         )
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set new target temperature."""
+        """Set new target temperature, after the mode if the action gives one."""
+        if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) is not None:
+            await self.async_set_hvac_mode(hvac_mode)
+
         set_temperature = kwargs[ATTR_TEMPERATURE]
 
         set_temperature = max(self.min_temp, min(self.max_temp, set_temperature))

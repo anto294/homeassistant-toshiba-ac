@@ -19,6 +19,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
   end the periodic requests or the realtime channel for good.
 - The energy sensor now becomes unavailable and available again with the connection, like
   the other entities.
+- climate.set_temperature now applies the hvac_mode it is given, which it used to ignore.
 
 ## [0.1.0b2] - 2026-11-07
 
